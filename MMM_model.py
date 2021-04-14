@@ -1,6 +1,7 @@
 from pyomo.environ import *
 import pandas as pd
 import matplotlib.pyplot as plt
+import numpy as np
 
 model = ConcreteModel()
 
@@ -51,9 +52,16 @@ model.techs = Set(initialize=techs, doc='techs')
 
 
 #PARAMETERS
+wind_data = extractData("Wind_")
+pv_data = extractData("PV_") 
+inflow_data = getInflow() # MWh for each hour
+
+
 model.demand =   Param(model.nodes, model.hours, initialize=extractData("Load_"))
 model.wind =     Param(model.nodes, model.hours, initialize=extractData("Wind_"))
 model.sun =      Param(model.nodes, model.hours, initialize=extractData("PV_"))
+
+
 model.inflow =   Param(model.hours, initialize=getInflow())
 model.IC =       Param(model.techs, initialize=IC, doc='investment costs')
 model.RC =       Param(model.techs, initialize=RC, doc='running costs')
@@ -66,7 +74,7 @@ model.co2 =      Param(model.techs, initialize=co2, doc='emissions')
 
 
 #VARIABLES
-capMaxdata = pd.read_csv('data/capMax.csv', index_col=[0])
+#capMaxdata = pd.read_csv('data/capMax.csv', index_col=[0])
 
 """ original untouched method
 def capacity_max(model, n, g):
@@ -89,24 +97,72 @@ def max_cap(model, n, b):
 
 
 def prod_cap(model, n, b, h):
+    bounds={
+            'Wind':  wind_data[n,h]*model.capa['Wind'], 
+            'PV':      pv_data[n,h]*model.capa['PV'],
+            'Gas':                1*model.capa['Gas'],
+            'Hydro': inflow_data[h]*model.capa['Hydro'],
+            'Battery':            0*model.capa['Battery'] # TODO change
+             }
+    return bounds.get(b,"Something went wrong")
+
+
+def hydro_bounds():
+    return 0.0, 33.0 # TWh 
+
+
     
 
 #model.capa = Var(model.nodes, model.gens, bounds=capacity_max, doc='Generator cap')
 model.capa = Var(model.nodes, model.techs, bounds=max_cap, doc='Generator cap')
-model.prod = Var(model.nodes, model.techs, model.hours, bounds=prod_cap, doc='Generator cap')
+model.prod = Var(model.nodes, model.techs, model.hours, bounds=prod_cap, doc='tech cap')
+model.waterLevel = Var(model.hours, bounds=hydro_bounds, doc='reservoir water level')
 
 
 #CONSTRAINTS
+"""
 def prodcapa_rule(model, nodes, gens, time):
     return model.prod[nodes, gens, time] <= model.capa[nodes, gens]
 
 model.prodCapa = Constraint(model.nodes, model.gens, model.time, rule=prodcapa_rule)
+"""
 
+# The countries’ electricity demand should be met at all hours:
+def demand_rule(model, nodes, techs, hours):
+    return model.demand[nodes, hours] <= model.prod[nodes, techs, hours]
+
+model.demandCon = Constraint(model.nodes, model.gens, model.time, rule=demand_rule)
+
+
+# We can't use more hydro than there is water in the reservoir
+def reservoir_rule(model,hours):
+    return model.prod['SV', 'Hydro', hours] <= model.waterLevel[hours]
+
+model.demandCon = Constraint(model.hours, rule=reservoir_rule)
+
+
+# Water level in reservoir should be the same in beginning and end of year
+def waterLevel_rule(model, hours):
+    return model.waterLevel[hours[0]] == model.waterLevel[hours[-1]]
+
+model.demandCon = Constraint(model.hours, rule=waterLevel_rule)
+
+
+model.OBJ = pyo.Objective(expr = 2*model.x[1] + 3*model.x[2])
 
 #OBJECTIVE FUNCTION
+def get_AC(b):
+    return model.IC[b]*r/(1-1/(1+r)^model.lt[b])
+    
+    running costs:
+        np.sum(model.prod*(model.RC+model.FC/model.mu), axis=)
+
+# axis 0 = country 
+# axis 1 = branch
+# axis 2 = hours
+
 def objective_rule(model):
-    return sum(#Add equation for the sum of all system costs.
-    )
+    return sum(model.prod*model.IC*r/(1-1/(1+r)^model.lt) )
 
 model.objective = Objective(rule=objective_rule, sense=minimize, doc='Objective function')
 
