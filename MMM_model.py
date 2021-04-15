@@ -98,11 +98,11 @@ def max_cap(model, n, b):
 
 def prod_cap(model, n, b, h):
     bounds={
-            'Wind':  wind_data[n,h]*model.capa['Wind'], 
-            'PV':      pv_data[n,h]*model.capa['PV'],
-            'Gas':                1*model.capa['Gas'],
-            'Hydro': inflow_data[h]*model.capa['Hydro'],
-            'Battery':            0*model.capa['Battery'] # TODO change
+            'Wind':  wind_data[n,h]*model.capa[n, 'Wind'], 
+            'PV':      pv_data[n,h]*model.capa[n, 'PV'],
+            'Gas':                1*model.capa[n, 'Gas'],
+            'Hydro': inflow_data[h]*model.capa[n, 'Hydro'],
+            'Battery':            0*model.capa[n, 'Battery'] # TODO change
              }
     return bounds.get(b,"Something went wrong")
 
@@ -148,21 +148,20 @@ def waterLevel_rule(model, hours):
 model.demandCon = Constraint(model.hours, rule=waterLevel_rule)
 
 
-model.OBJ = pyo.Objective(expr = 2*model.x[1] + 3*model.x[2])
 
 #OBJECTIVE FUNCTION
 def get_AC(b):
     return model.IC[b]*r/(1-1/(1+r)^model.lt[b])
     
-    running costs:
-        np.sum(model.prod*(model.RC+model.FC/model.mu), axis=)
-
-# axis 0 = country 
-# axis 1 = branch
-# axis 2 = hours
 
 def objective_rule(model):
-    return sum(model.prod*model.IC*r/(1-1/(1+r)^model.lt) )
+    summ = 0
+    for i in model.capa:
+        for b in model.techs:
+            summ = summ + model.capa[i,b]*get_AC(b)
+            for h in model.hours:
+                summ = summ + model.prod[i,b,h]*(model.RC[b]+Model.FC[b]/model.mu[b])
+                return summ
 
 model.objective = Objective(rule=objective_rule, sense=minimize, doc='Objective function')
 
