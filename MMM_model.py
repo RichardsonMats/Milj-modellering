@@ -161,6 +161,61 @@ def objective_rule(model):
 
 model.objective = Objective(rule=objective_rule, sense=minimize, doc='Objective function')
 
+# Plot First German Week
+def plotDEW1():
+    w1 = range(168)
+    week1_hours = [n for n in w1]
+    energy_produced = {
+        'Wind' : [model.prod['DE', 'Wind', h].value/1e3 for h in w1],
+        'PV'   : [model.prod['DE', 'PV', h].value/1e3 for h in w1],
+        'Gas'  : [model.prod['DE', 'Gas', h].value/1e3 for h in w1],
+        'Hydro': [model.prod['DE', 'Hydro', h].value/1e3 for h in w1]
+    }
+
+    fig, ax = plt.subplots()
+    ax.stackplot(week1_hours, energy_produced.values(),
+             labels=energy_produced.keys())
+    ax.legend(loc='upper left')
+    ax.set_title('Energy produced 1st week in Germany')
+    ax.set_xlabel('Hour')
+    ax.set_ylabel('Produced energy in GWh')
+    plt.show()
+
+# Plot installed capacities:
+def plotInstalledCapacities():
+    labels = ['DE', 'DK', 'SE']
+    wind_installed = [model.capa['DE', 'Wind'].value, model.capa['DK', 'Wind'].value, model.capa['SE', 'Wind'].value]
+    solar_installed = [model.capa['DE', 'PV'].value, model.capa['DK', 'PV'].value, model.capa['SE', 'PV'].value]
+    gas_installed = [model.capa['DE', 'Gas'].value, model.capa['DK', 'Gas'].value, model.capa['SE', 'Gas'].value]
+    hydro_installed = [model.capa['DE', 'Hydro'].value, model.capa['DK', 'Hydro'].value, model.capa['SE', 'Hydro'].value]
+    wind_cap = [180, 90, 280]
+    solar_cap = [460, 60, 75]
+    gas_cap = [0,0,0]
+    hydro_cap = [0, 0, 14]
+
+    x = np.arange(len(labels))  # the label locations
+    width = 0.2  # the width of the bars
+
+    fig, ax = plt.subplots()
+    rects1 = ax.bar(x - width, wind_installed, width, label='wind')
+    rects2 = ax.bar(x - 2*width, solar_installed, width, label='PV')
+    rects3 = ax.bar(x + 2*width, gas_installed, width, label='gas')
+    rects4 = ax.bar(x + width, hydro_installed, width, label='hydro')
+
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    ax.set_ylabel('Scores')
+    ax.set_title('Scores by group and gender')
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.legend()
+    # ax.bar_label(rects1, padding=3)
+    # ax.bar_label(rects2, padding=3)
+    # ax.bar_label(rects3, padding=3)
+    # ax.bar_label(rects4, padding=3)
+    fig.tight_layout()
+    plt.show()
+
+
 
 if __name__ == '__main__':
     from pyomo.opt import SolverFactory
@@ -195,65 +250,7 @@ if __name__ == '__main__':
     print(wind_SE_tot)
 
     costTot = value(model.objective) / 1e6 #Million EUR
-
-
-
-
-
-# Plot First German Week
-w1 = range(168)
-week1_hours = [n for n in w1]
-energy_produced = {
-    'Wind' : [model.prod['DE', 'Wind', h].value/1e3 for h in w1],
-    'PV'   : [model.prod['DE', 'PV', h].value/1e3 for h in w1],
-    'Gas'  : [model.prod['DE', 'Gas', h].value/1e3 for h in w1],
-    'Hydro': [model.prod['DE', 'Hydro', h].value/1e3 for h in w1]
-    }
-
-fig, ax = plt.subplots()
-ax.stackplot(week1_hours, energy_produced.values(),
-             labels=energy_produced.keys())
-ax.legend(loc='upper left')
-ax.set_title('Energy produced 1st week in Germany')
-ax.set_xlabel('Hour')
-ax.set_ylabel('Produced energy in GWh')
-
-plt.show()
-
-# Plot installed capacities:
-labels = ['DE', 'DK', 'SE']
-wind_installed = [model.capa['DE', 'Wind'].value, model.capa['DK', 'Wind'].value, model.capa['SE', 'Wind'].value]
-solar_installed = [model.capa['DE', 'PV'].value, model.capa['DK', 'PV'].value, model.capa['SE', 'PV'].value]
-gas_installed = [model.capa['DE', 'Gas'].value, model.capa['DK', 'Gas'].value, model.capa['SE', 'Gas'].value]
-hydro_installed = [model.capa['DE', 'Hydro'].value, model.capa['DK', 'Hydro'].value, model.capa['SE', 'Hydro'].value]
-wind_cap = [180, 90, 280]
-solar_cap = [460, 60, 75]
-gas_cap = [0,0,0]
-hydro_cap = [0, 0, 14]
-
-
-
-x = np.arange(len(labels))  # the label locations
-width = 0.2  # the width of the bars
-
-fig, ax = plt.subplots()
-rects1 = ax.bar(x - width, wind_installed, width, label='wind')
-rects2 = ax.bar(x - 2*width, solar_installed, width, label='PV')
-rects3 = ax.bar(x + 2*width, gas_installed, width, label='gas')
-rects4 = ax.bar(x + width, hydro_installed, width, label='hydro')
-
-# Add some text for labels, title and custom x-axis tick labels, etc.
-ax.set_ylabel('Scores')
-ax.set_title('Scores by group and gender')
-ax.set_xticks(x)
-ax.set_xticklabels(labels)
-ax.legend()
-
-# ax.bar_label(rects1, padding=3)
-# ax.bar_label(rects2, padding=3)
-# ax.bar_label(rects3, padding=3)
-# ax.bar_label(rects4, padding=3)
-
-fig.tight_layout()
-
-plt.show()
+    
+    # Plot plots
+    plotInstalledCapacities()
+    plotDEW1()
