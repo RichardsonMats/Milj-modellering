@@ -234,13 +234,13 @@ hydro_cap = [0, 0, 14]
 
 
 x = np.arange(len(labels))  # the label locations
-width = 0.7  # the width of the bars
+width = 0.2  # the width of the bars
 
 fig, ax = plt.subplots()
-rects1 = ax.bar(x - width/2, wind_installed, width, label='wind')
-rects2 = ax.bar(x - width/4, solar_installed, width, label='PV')
-rects3 = ax.bar(x + width/2, gas_installed, width, label='gas')
-rects4 = ax.bar(x + width/4, hydro_installed, width, label='hydro')
+rects1 = ax.bar(x - width, wind_installed, width, label='wind')
+rects2 = ax.bar(x - 2*width, solar_installed, width, label='PV')
+rects3 = ax.bar(x + 2*width, gas_installed, width, label='gas')
+rects4 = ax.bar(x + width, hydro_installed, width, label='hydro')
 
 # Add some text for labels, title and custom x-axis tick labels, etc.
 ax.set_ylabel('Scores')
