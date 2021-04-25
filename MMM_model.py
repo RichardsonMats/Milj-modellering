@@ -4,6 +4,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 import gurobipy
 import csv
+import matplotlib
+
+
 
 
 model = ConcreteModel()
@@ -207,7 +210,6 @@ energy_produced = {
     'Hydro': [model.prod['DE', 'Hydro', h].value/1e3 for h in w1]
     }
 
-
 fig, ax = plt.subplots()
 ax.stackplot(week1_hours, energy_produced.values(),
              labels=energy_produced.keys())
@@ -218,3 +220,40 @@ ax.set_ylabel('Produced energy in GWh')
 
 plt.show()
 
+# Plot installed capacities:
+labels = ['DE', 'DK', 'SE']
+wind_installed = [model.capa['DE', 'Wind'].value, model.capa['DK', 'Wind'].value, model.capa['SE', 'Wind'].value]
+solar_installed = [model.capa['DE', 'PV'].value, model.capa['DK', 'PV'].value, model.capa['SE', 'PV'].value]
+gas_installed = [model.capa['DE', 'Gas'].value, model.capa['DK', 'Gas'].value, model.capa['SE', 'Gas'].value]
+hydro_installed = [model.capa['DE', 'Hydro'].value, model.capa['DK', 'Hydro'].value, model.capa['SE', 'Hydro'].value]
+wind_cap = [180, 90, 280]
+solar_cap = [460, 60, 75]
+gas_cap = [0,0,0]
+hydro_cap = [0, 0, 14]
+
+
+
+x = np.arange(len(labels))  # the label locations
+width = 0.7  # the width of the bars
+
+fig, ax = plt.subplots()
+rects1 = ax.bar(x - width/2, wind_installed, width, label='wind')
+rects2 = ax.bar(x - width/4, solar_installed, width, label='PV')
+rects3 = ax.bar(x + width/2, gas_installed, width, label='gas')
+rects4 = ax.bar(x + width/4, hydro_installed, width, label='hydro')
+
+# Add some text for labels, title and custom x-axis tick labels, etc.
+ax.set_ylabel('Scores')
+ax.set_title('Scores by group and gender')
+ax.set_xticks(x)
+ax.set_xticklabels(labels)
+ax.legend()
+
+# ax.bar_label(rects1, padding=3)
+# ax.bar_label(rects2, padding=3)
+# ax.bar_label(rects3, padding=3)
+# ax.bar_label(rects4, padding=3)
+
+fig.tight_layout()
+
+plt.show()
