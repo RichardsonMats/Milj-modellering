@@ -84,9 +84,9 @@ model.prod =         Var(model.nodes, model.techs, model.hours, bounds= (0.0, No
 model.capa =         Var(model.nodes, model.techs,              bounds= max_cap, doc='Generator cap')
 model.waterLevel =   Var(model.hours,                           bounds= hydro_bounds, doc='reservoir water level')
 model.batteryLevel = Var(model.nodes, model.hours,              bounds= (0.0, None), doc='saved battery level')
-model.batterySavings = Var(model.nodes, model.hours,            bounds= (0.0, None), doc="How much energy into Battery")
-#model.transmission = Var(model.nodes, model.nodes, model.hours, bounds= (0.0, None), doc='transmission one-way')
-#model.transmissionCap = Var(model.nodes, model.nodes,           bounds= (0.0, None), doc="Transmission capacity")
+#model.batterySavings = Var(model.nodes, model.hours,            bounds= (0.0, None), doc="How much energy into Battery")
+model.transmission = Var(model.nodes, model.nodes, model.hours, bounds= (0.0, None), doc='transmission one-way')
+model.transmissionCap = Var(model.nodes, model.nodes,           bounds= (0.0, None), doc="Transmission capacity")
 
 
 
@@ -104,24 +104,15 @@ model.batterySavings = Var(model.nodes, model.hours,            bounds= (0.0, No
 # 10 No self transmission
 
 
-
+"""
 # 3 The countries' electricity demand should be met at all hours:
 def demand_rule(model, nodes, hours):
     totProd = sum([model.prod[nodes, t, hours] for t in model.techs])
-    return model.demand[nodes, hours] + model.batterySavings[nodes, hours] <= totProd
+    return model.demand[nodes, hours] <= totProd
 
-#model.demandCon = Constraint(model.nodes, model.hours, rule=demand_rule)
-
-def deman2(model, nodes, hours):
-    totalProd=0
-    for tech in model.techs:
-        totalProd = totalProd + model.prod[nodes, tech, hours]
-    return totalProd >=model.demand[nodes, hours] + model.batterySavings[nodes, hours]
-model.demandConstraint  = Constraint(model.nodes, model.hours, rule=deman2)
-
-
-
+model.demandCon = Constraint(model.nodes, model.hours, rule=demand_rule)
 """
+
 # 3 The countries' electricity demand should be met at all hours:
 def demand_rule(model, nodes, hours):
     # totProd[nodes, hours] + transmissionIn[nodes, hours] - transmissionOut[nodes, hours] => demand
@@ -129,10 +120,10 @@ def demand_rule(model, nodes, hours):
     transmissionOut = sum([model.transmission[nodes, n, hours] for n in model.nodes])
     totProd = sum([model.prod[nodes, t, hours] for t in model.techs])
 
-    return totProd - transmissionOut/0.98 >= model.demand[nodes, hours] - transmissionIn + model.batterySavings[nodes, hours]
+    return totProd + transmissionIn >= model.demand[nodes, hours] + transmissionOut/0.98
 
 model.demandCon = Constraint(model.nodes, model.hours, rule=demand_rule)
-"""
+
 
 #4 The production should always be lower or equal than installed
 def prod_rule(model, nodes, techs, hours):
@@ -141,7 +132,7 @@ def prod_rule(model, nodes, techs, hours):
             'PV':        pv_data[nodes,hours]*model.capa[nodes, 'PV'],
             'Gas':                           model.capa[nodes, 'Gas'],
             'Hydro':                       model.capa[nodes, 'Hydro'],
-            'Battery':               model.capa[nodes, 'Battery']}
+            'Battery':               0.9*model.capa[nodes, 'Battery']}
     return model.prod[nodes, techs, hours] <= upperLimit.get(techs)
 
 model.prodCon = Constraint(model.nodes, model.techs, model.hours, rule=prod_rule)
@@ -158,19 +149,20 @@ model.reservoirCon = Constraint(model.hours, rule=reservoir_rule)
 
 
 # 6 CO_2 cap
-# def emissions(country):
-#         totProd = sum([model.prod[country, 'Gas', h] for h in model.hours]) # MWh_elec
-#         burnedGas = totProd/model.mu['Gas'] # MWh_fuel
-#         emissions = burnedGas*model.co2['Gas'] # ton CO_2
-#         return emissions
+def emissions(country):
+    totProd = sum([model.prod[country, 'Gas', h] for h in model.hours]) # MWh_elec
+    burnedGas = totProd/model.mu['Gas'] # MWh_fuel
+    emissions = burnedGas*model.co2['Gas'] # ton CO_2
+    return emissions
 
-# def co2cap(model):
-#     old_emissions = sum([125243664.86937965, 8552556.240328295, 4978228.17498443])
-#     target = old_emissions*0.1 # will give an infeasible solution
-#     return sum([emissions(c) for c in model.nodes]) <= target
+def co2cap(model):
+    old_emissions = sum([125243664.86937965, 8552556.240328295, 4978228.17498443])
+    target = old_emissions*0.1 # will give an infeasible solution
+    return sum([emissions(c) for c in model.nodes]) <= target
 
-# model.co2Con = Constraint(rule=co2cap)
+model.co2Con = Constraint(rule=co2cap)
 
+"""
 def co2CapV2(model):
      old_emissions = sum([125243664.86937965, 8552556.240328295, 4978228.17498443])
      newEmission = 0
@@ -179,7 +171,7 @@ def co2CapV2(model):
              newEmission = newEmission + model.prod[country, "Gas", h]*co2["Gas"]/0.9
      return newEmission <= old_emissions*0.1
 model.co2Constraint = Constraint(rule=co2CapV2)
-
+"""
 
 # extra 
 def startAtZero(model, nodes):
@@ -189,7 +181,7 @@ model.batteryCon2 = Constraint(model.nodes, rule=startAtZero)
 
 
 # 7 Produced electricity that isn't used by demand is stored in batteries, battery not over capacity
-
+"""
 def battery_rule(model, nodes, hours):
     spareEnergy = sum([model.prod[nodes, t, hours] for t in model.techs]) - model.demand[nodes, hours]
     if hours == 8759:
@@ -205,30 +197,28 @@ def battery_rule(model, nodes, hours):
        return model.batteryLevel[nodes, 0] == model.batteryLevel[nodes, hours] + spareEnergy - model.prod[nodes, 'Battery', hours]/0.9
    else:
        return model.batteryLevel[nodes, hours+1] == model.batteryLevel[nodes, hours] + spareEnergy - model.prod[nodes, 'Battery', hours]/0.9
-"""   
-#model.batteryCon = Constraint(model.nodes , model.hours, rule=battery_rule)
+   
+model.batteryCon = Constraint(model.nodes , model.hours, rule=battery_rule)
 
+"""
 # Saves into battery
 def batteryConstraint(model, nodes, hours):
     if hours == 0:
         return model.batteryLevel[nodes, 0] == model.batteryLevel[nodes, 0] - model.prod[nodes, 'Battery', 0]
-    elif hours >0:
+    else:
         return model.batteryLevel[nodes, hours] == model.batteryLevel[nodes, hours-1] + model.batterySavings[nodes, hours]  - model.prod[nodes, 'Battery', hours]
 model.batteryCon = Constraint(model.nodes, model.hours, rule=batteryConstraint)
 
 # Checks battery is not over capcaity
 def batteryLessThanCap(model, nodes, hours):
     #return model.batteryLevel[nodes, hours] <= model.capa[nodes, "Battery"]
-    return model.batterySavings[nodes, hours] <= model.capa[nodes, "Battery"]
+    return model.batterySavings[nodes, hours] <= model.capa[nodes, "Battery"] - model.batterySavings[nodes, hours]
 model.batteryCapCon=Constraint(model.nodes, model.hours, rule=batteryLessThanCap)
 
 def batteryLessThanCap2(model, nodes, hours):
     return model.batteryLevel[nodes, hours] <=model.capa[nodes, "Battery"]
 model.batteryCapCon2=Constraint(model.nodes, model.hours, rule=batteryLessThanCap2)
-
-def batteryEnd(model, nodes):
-    return model.batteryLevel[nodes, model.hours[8759]] == model.batteryLevel[nodes, 0]
-model.batteryEndConst = Constraint(model.nodes, rule=batteryEnd)
+"""
 
 
 
@@ -236,21 +226,21 @@ model.batteryEndConst = Constraint(model.nodes, rule=batteryEnd)
 def biDirectional(model, country1, country2):
     return model.transmissionCap[country1, country2] == model.transmissionCap[country2, country1]
 
-#model.transBiCap = Constraint(model.nodes, model.nodes, rule=biDirectional)
+model.transBiCap = Constraint(model.nodes, model.nodes, rule=biDirectional)
 
 
 # 9 transmission is limited by installed capacity
 def transmissionConstraint(model, country1, country2, hour):
     return model.transmission[country1, country2, hour] <= model.transmissionCap[country1, country2]
 
-#model.transmissionCont = Constraint(model.nodes, model.nodes, model.hours, rule=transmissionConstraint)
+model.transmissionCont = Constraint(model.nodes, model.nodes, model.hours, rule=transmissionConstraint)
 
 
 # 10 No self transmission
 def selfTransmissionConstraint(model, node, hours):
     return model.transmission[node, node, hours] == 0
 
-#model.selfTransmission = Constraint(model.nodes, model.hours, rule= selfTransmissionConstraint)
+model.selfTransmission = Constraint(model.nodes, model.hours, rule= selfTransmissionConstraint)
 
 
 
@@ -276,7 +266,7 @@ def objective_rule(model):
             summ = summ + model.capa[i,b]*get_AC(b)
             for h in model.hours:
                 summ = summ + model.prod[i,b,h]*(model.RC[b]+model.FC[b]/model.mu[b])
-    return summ# + transmissionCost()
+    return summ + transmissionCost()
 
 model.objective = Objective(rule=objective_rule, sense=minimize, doc='Objective function')
 
@@ -292,6 +282,12 @@ def totProdTech(country, tech):
     return sum([model.prod[country, tech, h].value for h in model.hours])
 
 
+# into a ceartain country
+def netTransmissions(country, hour):
+    transIn = sum([model.transmission[n, country, hour].value for n in model.nodes])
+    transOut = sum([model.transmission[country, n, hour].value for n in model.nodes])
+    return transIn - transOut
+
 # Plot First German Week
 def plotDEW1():
     w1 = range(168)
@@ -302,13 +298,13 @@ def plotDEW1():
         'Gas'         : [model.prod['DE', 'Gas', h].value/1e3 for h in w1],
         'Hydro'       : [model.prod['DE', 'Hydro', h].value/1e3 for h in w1],
         'Battery'     : [model.prod['DE', 'Battery', h].value/1e3 for h in w1],
-        #'Transmission': [model.prod['DE', 'Transmission', h].value/1e3 for h in w1]
-
+        'Transmission': [netTransmissions('DE', h)/1e3 for h in w1]
     }
 
     fig, ax = plt.subplots()
     ax.stackplot(week1_hours, energy_produced.values(),
              labels=energy_produced.keys())
+    ax.plot(week1_hours, [model.demand['DE', h]/1e3 for h in w1])
     ax.legend(loc='upper left')
     ax.set_title('Energy produced 1st week in Germany')
     ax.set_xlabel('Hour')
@@ -319,16 +315,17 @@ def plotDEW1():
 def plotInstalledCapacities():
     labels = ['DE', 'DK', 'SE']
     x = np.arange(len(labels))  # the label locations
-    width = 0.2  # the width of the bars
+    width = 0.15  # the width of the bars
 
     fig, ax = plt.subplots()
-    rects1 = ax.bar(x - 2*width, [model.capa[i, 'Gas'].value for i in model.nodes], width, label='gas')
-    rects2 = ax.bar(x - width,   [model.capa[i, 'PV'].value for i in model.nodes], width, label='PV')
-    rects3 = ax.bar(x,           [model.capa[i, 'Wind'].value for i in model.nodes], width, label='wind')
-    rects4 = ax.bar(x + width,   [model.capa[i, 'Battery'].value for i in model.nodes], width, label='battery')
-    rects5 = ax.bar(x + 2*width, [model.capa[i, 'Hydro'].value for i in model.nodes], width, label='hydro')
-    #rects5 = ax.bar(x + 3*width, [model.capa[i, 'Transmission'].value for i in model.nodes], width, label='transmission')
-
+    rects1 = ax.bar(x - 3*width, [model.capa[i, 'Gas'].value for i in model.nodes], width, label='gas')
+    rects2 = ax.bar(x - 2*width, [model.capa[i, 'PV'].value for i in model.nodes], width, label='PV')
+    rects3 = ax.bar(x -   width, [model.capa[i, 'Wind'].value for i in model.nodes], width, label='wind')
+    rects4 = ax.bar(x,           [model.capa[i, 'Battery'].value for i in model.nodes], width, label='battery')
+    rects5 = ax.bar(x + width,   [model.capa[i, 'Hydro'].value for i in model.nodes], width, label='hydro')
+    rects6 = ax.bar(x + 2*width, [model.transmissionCap['DE', i].value for i in model.nodes], width, label='trans from DE')
+    rects7 = ax.bar(x + 3*width, [model.transmissionCap['DK', i].value for i in model.nodes], width, label='trans from DK')    
+    rects8 = ax.bar(x + 4*width, [model.transmissionCap['SE', i].value for i in model.nodes], width, label='trans from SE')
 
     # Add some text for labels, title and custom x-axis tick labels, etc.
     ax.set_ylabel("installed capacity [MW]")
@@ -352,7 +349,7 @@ def plotAnualProd():
     wind_prod = [sum([model.prod[i, 'Wind', h].value for h in model.hours]) for i in model.nodes]
     battery_prod = [sum([model.prod[i, 'Battery', h].value for h in model.hours]) for i in model.nodes]
     hydro_prod = [sum([model.prod[i, 'Hydro', h].value for h in model.hours]) for i in model.nodes]
-    #transmission_prod = [sum([model.prod[i, 'Transmission', h].value for h in model.hours]) for i in model.nodes]
+    transmission_prod = [sum([netTransmissions(i, h) for h in model.hours]) for i in model.nodes]
 
     fig, ax = plt.subplots()
     rects1 = ax.bar(x - 2*width, gas_prod, width, label='gas')
@@ -360,7 +357,7 @@ def plotAnualProd():
     rects3 = ax.bar(x,           wind_prod, width, label='wind')
     rects4 = ax.bar(x + width,   battery_prod, width, label='battery')
     rects5 = ax.bar(x + 2*width, hydro_prod, width, label='hydro')
-    #rects5 = ax.bar(x + 3*width, [model.capa[i, 'Transmission'].value for i in model.nodes], width, label='transmission')
+    rects6 = ax.bar(x + 3*width, transmission_prod, width, label='transmission')
 
     # Add some text for labels, title and custom x-axis tick labels, etc.
     ax.set_ylabel("Produced energy [MWh]")
@@ -443,7 +440,8 @@ if __name__ == '__main__':
             print(str(t)+"produced: " + str(totProdTech(i,t)))
     
 
-    plotDEW1()
+   
     plotInstalledCapacities()
     plotAnualProd()
+    plotDEW1()
     plotBatteryLevel()
