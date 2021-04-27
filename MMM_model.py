@@ -84,8 +84,10 @@ model.prod =         Var(model.nodes, model.techs, model.hours, bounds= (0.0, No
 model.capa =         Var(model.nodes, model.techs,              bounds= max_cap, doc='Generator cap')
 model.waterLevel =   Var(model.hours,                           bounds= hydro_bounds, doc='reservoir water level')
 model.batteryLevel = Var(model.nodes, model.hours,              bounds= (0.0, None), doc='saved battery level')
+model.batterySavings = Var(model.nodes, model.hours,            bounds= (0.0, None), doc="How much energy into Battery")
 model.transmission = Var(model.nodes, model.nodes, model.hours, bounds= (0.0, None), doc='transmission one-way')
 model.transmissionCap = Var(model.nodes, model.nodes,           bounds= (0.0, None), doc="Transmission capacity")
+
 
 
 
@@ -118,8 +120,7 @@ def demand_rule(model, nodes, hours):
     transmissionOut = sum([model.transmission[nodes, n, hours] for n in model.nodes])
     totProd = sum([model.prod[nodes, t, hours] for t in model.techs])
 
-    #return model.demand[nodes, hours] <= totProd
-    return totProd - transmissionOut/0.98 >= model.demand[nodes, hours] - transmissionIn
+    return totProd - transmissionOut/0.98 >= model.demand[nodes, hours] - transmissionIn + model.batterySavings[nodes, hours]
 
 model.demandCon = Constraint(model.nodes, model.hours, rule=demand_rule)
 
@@ -148,18 +149,27 @@ model.reservoirCon = Constraint(model.hours, rule=reservoir_rule)
 
 
 # 6 CO_2 cap
-def emissions(country):
-    totProd = sum([model.prod[country, 'Gas', h] for h in model.hours]) # MWh_elec
-    burnedGas = totProd/model.mu['Gas'] # MWh_fuel
-    emissions = burnedGas*model.co2['Gas'] # ton CO_2
-    return emissions
+# def emissions(country):
+#     totProd = sum([model.prod[country, 'Gas', h] for h in model.hours]) # MWh_elec
+#     burnedGas = totProd/model.mu['Gas'] # MWh_fuel
+#     emissions = burnedGas*model.co2['Gas'] # ton CO_2
+#     return emissions
 
-def co2cap(model):
+# def co2cap(model):
+#     old_emissions = sum([125243664.86937965, 8552556.240328295, 4978228.17498443])
+#     target = old_emissions*0.1 # will give an infeasible solution
+#     return sum([emissions(c) for c in model.nodes]) <= target
+
+# model.co2Con = Constraint(rule=co2cap)
+
+def co2CapV2(model):
     old_emissions = sum([125243664.86937965, 8552556.240328295, 4978228.17498443])
-    target = old_emissions*0.1 # will give an infeasible solution
-    return sum([emissions(c) for c in model.nodes]) <= target
-
-model.co2Con = Constraint(rule=co2cap)
+    newEmission = 0
+    for country in model.nodes:
+        for h in model.hours:
+            newEmission = newEmission + model.prod[country, "Gas", h]*co2["Gas"]/0.9
+    return newEmission <= old_emissions*0.1
+model.co2Constraint = Constraint(rule=co2CapV2)
 
 """
 # extra 
@@ -169,15 +179,40 @@ def startAtZero(model, nodes):
 model.batteryCon2 = Constraint(model.nodes, rule=startAtZero)
 """
 
-# 7 Produced electricity that isn't used by demand is stored in batteries
+# 7 Produced electricity that isn't used by demand is stored in batteries, battery not over capacity
+"""
 def battery_rule(model, nodes, hours):
     spareEnergy = sum([model.prod[nodes, t, hours] for t in model.techs]) - model.demand[nodes, hours]
     if hours == 8759:
         return model.batteryLevel[nodes, 0] == model.batteryLevel[nodes, hours] + spareEnergy - model.prod[nodes, 'Battery', hours]/0.9
     else:
         return model.batteryLevel[nodes, hours+1] == model.batteryLevel[nodes, hours] + spareEnergy - model.prod[nodes, 'Battery', hours]/0.9
+"""
+# def battery_rule(model, nodes, hours):
+#     transmissionIn = sum([model.transmission[n, nodes, hours] for n in model.nodes])
+#     transmissionOut = sum([model.transmission[nodes, n, hours] for n in model.nodes])
+#     spareEnergy = sum([model.prod[nodes, t, hours] for t in model.techs]) - model.demand[nodes, hours] - transmissionOut/0.98 + transmissionIn
+#     if hours == 8759:
+#         return model.batteryLevel[nodes, 0] == model.batteryLevel[nodes, hours] + spareEnergy - model.prod[nodes, 'Battery', hours]/0.9
+#     else:
+#         return model.batteryLevel[nodes, hours+1] == model.batteryLevel[nodes, hours] + spareEnergy - model.prod[nodes, 'Battery', hours]/0.9
         
-model.batteryCon = Constraint(model.nodes , model.hours, rule=battery_rule)
+# model.batteryCon = Constraint(model.nodes , model.hours, rule=battery_rule)
+
+# Saves into battery
+def batteryConstraint(model, nodes, hours):
+    if hours == 8759:
+        return model.batteryLevel[nodes, 0] == model.batteryLevel[nodes, hours] + model.batterySavings[nodes, hours] - model.prod[nodes, 'Battery', hours]
+    else:
+        return model.batteryLevel[nodes, hours+1] == model.batteryLevel[nodes, hours] + model.batterySavings[nodes, hours]  - model.prod[nodes, 'Battery', hours]
+model.batteryCon = Constraint(model.nodes, model.hours, rule=batteryConstraint)
+
+# Checks battery is not over capcaity
+def batteryLessThanCap(model, nodes, hours):
+    return model.batterySavings[nodes, hours] + model.batteryLevel[nodes, hours] <= model.capa[nodes, "Battery"]
+model.batterySavingsCon=Constraint(model.nodes, model.hours, rule=batteryLessThanCap)
+
+
 
 # 8 Transmission cap is the same in both directions
 def biDirectional(model, country1, country2):
@@ -199,6 +234,8 @@ def selfTransmissionConstraint(model, node, hours):
 
 model.selfTransmission = Constraint(model.nodes, model.hours, rule= selfTransmissionConstraint)
 
+
+
 # Manually calculate TransCost
 def transmissionCost():
     annualTrans = discountrate/(1-1/(1 + discountrate)**50)
@@ -207,8 +244,6 @@ def transmissionCost():
         for n2 in model.nodes:
             totalTransmissionCost = totalTransmissionCost + 2500*1e3 * annualTrans* model.transmissionCap[n, n2]
     return totalTransmissionCost /2
-
-
 
 
 #OBJECTIVE FUNCTION
@@ -318,16 +353,6 @@ def plotAnualProd():
     fig.tight_layout()
     plt.show()
     # Plot installed capacities:
-
-
-    # Add some text for labels, title and custom x-axis tick labels, etc.
-    ax.set_ylabel('energy [MW]')
-    ax.set_title( 'Anal energy productions')
-    ax.set_xticks(x)
-    ax.set_xticklabels(labels)
-    ax.legend()
-    fig.tight_layout()
-    plt.show()
 
 
 #plot battery levels
