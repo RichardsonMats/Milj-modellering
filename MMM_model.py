@@ -2,6 +2,7 @@ from pyomo.environ import *
 import pandas as pd
 import matplotlib.pyplot as plt
 import numpy as np
+#import gurobipy
 
 model = ConcreteModel()
 
@@ -22,7 +23,7 @@ maxPot = { 'DE' : {'Wind' : 180, 'PV' : 460, 'Gas' : inf, 'Hydro' : 0,  'Battery
            'SE' : {'Wind' : 280, 'PV' : 75,  'Gas' : inf, 'Hydro' : 14, 'Battery' : status}} # GW 
 
 
-discountrate = 0.05
+r = 0.05
 
 input_data = pd.read_csv('TimeSeries.csv', header=[0], index_col=[0])
 
@@ -60,13 +61,11 @@ inflow_data = getInflow() # MWh for each hour
 model.demand =   Param(model.nodes, model.hours, initialize=extractData("Load_"))
 model.wind =     Param(model.nodes, model.hours, initialize=extractData("Wind_"))
 model.sun =      Param(model.nodes, model.hours, initialize=extractData("PV_"))
-
-
 model.inflow =   Param(model.hours, initialize=getInflow())
 model.IC =       Param(model.techs, initialize=IC, doc='investment costs')
 model.RC =       Param(model.techs, initialize=RC, doc='running costs')
 model.FC =       Param(model.techs, initialize=FC, doc='fuel costs')
-model.lifetime = Param(model.techs, initialize=lt, doc='lifetimes')
+model.lt =       Param(model.techs, initialize=lt, doc='lifetimes')
 model.mu =       Param(model.techs, initialize=mu, doc='Conversion efficiency')
 model.co2 =      Param(model.techs, initialize=co2, doc='emissions')
 
@@ -98,24 +97,22 @@ def max_cap(model, n, b):
 
 def prod_cap(model, n, b, h):
     bounds={
-            'Wind':  wind_data[n,h]*model.capa[n, 'Wind'], 
-            'PV':      pv_data[n,h]*model.capa[n, 'PV'],
+            'Wind':  model.wind[n,h]*model.capa[n, 'Wind'], 
+            'PV':      model.sun[n,h]*model.capa[n, 'PV'],
             'Gas':                1*model.capa[n, 'Gas'],
-            'Hydro': inflow_data[h]*model.capa[n, 'Hydro'],
+            'Hydro': model.inflow[h]*model.capa[n, 'Hydro'],
             'Battery':            0*model.capa[n, 'Battery'] # TODO change
              }
-    return bounds.get(b,"Something went wrong")
+    return 0.0, bounds.get(b,"Something went wrong")
 
 
-def hydro_bounds():
+def hydro_bounds(model, h):
     return 0.0, 33.0 # TWh 
 
 
-    
-
 #model.capa = Var(model.nodes, model.gens, bounds=capacity_max, doc='Generator cap')
 model.capa = Var(model.nodes, model.techs, bounds=max_cap, doc='Generator cap')
-model.prod = Var(model.nodes, model.techs, model.hours, bounds=prod_cap, doc='tech cap')
+model.prod = Var(model.nodes, model.techs, model.hours, bounds=(None, None), doc='tech cap')
 model.waterLevel = Var(model.hours, bounds=hydro_bounds, doc='reservoir water level')
 
 
@@ -131,37 +128,48 @@ model.prodCapa = Constraint(model.nodes, model.gens, model.time, rule=prodcapa_r
 def demand_rule(model, nodes, techs, hours):
     return model.demand[nodes, hours] <= model.prod[nodes, techs, hours]
 
-model.demandCon = Constraint(model.nodes, model.gens, model.time, rule=demand_rule)
+model.demandCon = Constraint(model.nodes, model.techs, model.hours, rule=demand_rule)
 
 
 # We can't use more hydro than there is water in the reservoir
+
 def reservoir_rule(model,hours):
-    return model.prod['SV', 'Hydro', hours] <= model.waterLevel[hours]
+    return model.prod['SE', 'Hydro', hours] <= model.waterLevel[hours]
 
 model.demandCon = Constraint(model.hours, rule=reservoir_rule)
 
 
+def reservoir_rule(model,hours):
+    #waterLevel(h) = waterLevel(h-1) + inflow(h) - y(h)
+    model.waterLevel[hours] == model.waterLevel[hours] + model.inflow(hours) - model.prod['SE', 'Hydro', hours]
+    return model.prod['SE', 'Hydro', hours] <= model.waterLevel[hours]
+
+
+
+model.demandCon = Constraint(model.hours, rule=reservoir_rule)
+
+"""
 # Water level in reservoir should be the same in beginning and end of year
 def waterLevel_rule(model, hours):
     return model.waterLevel[hours[0]] == model.waterLevel[hours[-1]]
 
 model.demandCon = Constraint(model.hours, rule=waterLevel_rule)
-
+"""
 
 
 #OBJECTIVE FUNCTION
 def get_AC(b):
-    return model.IC[b]*r/(1-1/(1+r)^model.lt[b])
+    return model.IC[b]*r/(1-1/(1+r)**model.lt[b])
     
 
 def objective_rule(model):
     summ = 0
-    for i in model.capa:
+    for i in model.nodes:
         for b in model.techs:
             summ = summ + model.capa[i,b]*get_AC(b)
             for h in model.hours:
-                summ = summ + model.prod[i,b,h]*(model.RC[b]+Model.FC[b]/model.mu[b])
-                return summ
+                summ = summ + model.prod[i,b,h]*(model.RC[b]+model.FC[b]/model.mu[b])
+    return summ
 
 model.objective = Objective(rule=objective_rule, sense=minimize, doc='Objective function')
 
