@@ -103,16 +103,6 @@ model.transmissionCap = Var(model.nodes, model.nodes,           bounds= (0.0, No
 # 9 transmission is limited by installed capacity
 # 10 No self transmission
 
-
-"""
-# 3 The countries' electricity demand should be met at all hours:
-def demand_rule(model, nodes, hours):
-    totProd = sum([model.prod[nodes, t, hours] for t in model.techs])
-    return model.demand[nodes, hours] <= totProd
-
-model.demandCon = Constraint(model.nodes, model.hours, rule=demand_rule)
-"""
-
 # 3 The countries' electricity demand should be met at all hours:
 def demand_rule(model, nodes, hours):
     # totProd[nodes, hours] + transmissionIn[nodes, hours] - transmissionOut[nodes, hours] => demand
@@ -162,17 +152,6 @@ def co2cap(model):
 
 model.co2Con = Constraint(rule=co2cap)
 
-"""
-def co2CapV2(model):
-     old_emissions = sum([125243664.86937965, 8552556.240328295, 4978228.17498443])
-     newEmission = 0
-     for country in model.nodes:
-         for h in model.hours:
-             newEmission = newEmission + model.prod[country, "Gas", h]*co2["Gas"]/0.9
-     return newEmission <= old_emissions*0.1
-model.co2Constraint = Constraint(rule=co2CapV2)
-"""
-
 # extra 
 def startAtZero(model, nodes):
     return model.batteryLevel[nodes, 0] == 0
@@ -181,14 +160,7 @@ model.batteryCon2 = Constraint(model.nodes, rule=startAtZero)
 
 
 # 7 Produced electricity that isn't used by demand is stored in batteries, battery not over capacity
-"""
-def battery_rule(model, nodes, hours):
-    spareEnergy = sum([model.prod[nodes, t, hours] for t in model.techs]) - model.demand[nodes, hours]
-    if hours == 8759:
-        return model.batteryLevel[nodes, 0] == model.batteryLevel[nodes, hours] + spareEnergy - model.prod[nodes, 'Battery', hours]/0.9
-    else:
-        return model.batteryLevel[nodes, hours+1] == model.batteryLevel[nodes, hours] + spareEnergy - model.prod[nodes, 'Battery', hours]/0.9
-"""
+
 def battery_rule(model, nodes, hours):
    transmissionIn = sum([model.transmission[n, nodes, hours] for n in model.nodes])
    transmissionOut = sum([model.transmission[nodes, n, hours] for n in model.nodes])
@@ -199,27 +171,6 @@ def battery_rule(model, nodes, hours):
        return model.batteryLevel[nodes, hours+1] == model.batteryLevel[nodes, hours] + spareEnergy - model.prod[nodes, 'Battery', hours]/0.9
    
 model.batteryCon = Constraint(model.nodes , model.hours, rule=battery_rule)
-
-"""
-# Saves into battery
-def batteryConstraint(model, nodes, hours):
-    if hours == 0:
-        return model.batteryLevel[nodes, 0] == model.batteryLevel[nodes, 0] - model.prod[nodes, 'Battery', 0]
-    else:
-        return model.batteryLevel[nodes, hours] == model.batteryLevel[nodes, hours-1] + model.batterySavings[nodes, hours]  - model.prod[nodes, 'Battery', hours]
-model.batteryCon = Constraint(model.nodes, model.hours, rule=batteryConstraint)
-
-# Checks battery is not over capcaity
-def batteryLessThanCap(model, nodes, hours):
-    #return model.batteryLevel[nodes, hours] <= model.capa[nodes, "Battery"]
-    return model.batterySavings[nodes, hours] <= model.capa[nodes, "Battery"] - model.batterySavings[nodes, hours]
-model.batteryCapCon=Constraint(model.nodes, model.hours, rule=batteryLessThanCap)
-
-def batteryLessThanCap2(model, nodes, hours):
-    return model.batteryLevel[nodes, hours] <=model.capa[nodes, "Battery"]
-model.batteryCapCon2=Constraint(model.nodes, model.hours, rule=batteryLessThanCap2)
-"""
-
 
 
 # 8 Transmission cap is the same in both directions
