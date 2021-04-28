@@ -240,24 +240,24 @@ def netTransmissions(country, hour):
     return transIn - transOut
 
 # Plot First German Week
-def plotDEW1():
+def plotWeek1(country):
     w1 = range(168)
     week1_hours = [n for n in w1]
     energy_produced = {
-        'Wind'        : [model.prod['DE', 'Wind', h].value/1e3 for h in w1],
-        'PV'          : [model.prod['DE', 'PV', h].value/1e3 for h in w1],
-        'Gas'         : [model.prod['DE', 'Gas', h].value/1e3 for h in w1],
-        'Hydro'       : [model.prod['DE', 'Hydro', h].value/1e3 for h in w1],
-        'Battery'     : [model.prod['DE', 'Battery', h].value/1e3 for h in w1],
-        'Transmission': [netTransmissions('DE', h)/1e3 for h in w1]
+        'PV'          : [model.prod[country, 'PV', h].value/1e3 for h in w1],
+        'Wind'        : [model.prod[country, 'Wind', h].value/1e3 for h in w1],
+        'Gas'         : [model.prod[country, 'Gas', h].value/1e3 for h in w1],
+        'Hydro'       : [model.prod[country, 'Hydro', h].value/1e3 for h in w1],
+        'Battery'     : [model.prod[country, 'Battery', h].value/1e3 for h in w1],
+        'Transmission': [model.transmission['SE', 'DE', h].value/1e3 for h in w1]
     }
 
     fig, ax = plt.subplots()
     ax.stackplot(week1_hours, energy_produced.values(),
              labels=energy_produced.keys())
-    ax.plot(week1_hours, [model.demand['DE', h]/1e3 for h in w1])
+    ax.plot(week1_hours, [model.demand[country, h]/1e3 for h in w1])
     ax.legend(loc='upper left')
-    ax.set_title('Energy produced 1st week in Germany')
+    ax.set_title('Energy produced 1st week in ' + country)
     ax.set_xlabel('Hour')
     ax.set_ylabel('Produced energy in GWh')
     plt.show()
@@ -269,14 +269,14 @@ def plotInstalledCapacities():
     width = 0.15  # the width of the bars
 
     fig, ax = plt.subplots()
-    rects1 = ax.bar(x - 3*width, [model.capa[i, 'Gas'].value for i in model.nodes], width, label='gas')
-    rects2 = ax.bar(x - 2*width, [model.capa[i, 'PV'].value for i in model.nodes], width, label='PV')
-    rects3 = ax.bar(x -   width, [model.capa[i, 'Wind'].value for i in model.nodes], width, label='wind')
-    rects4 = ax.bar(x,           [model.capa[i, 'Battery'].value for i in model.nodes], width, label='battery')
-    rects5 = ax.bar(x + width,   [model.capa[i, 'Hydro'].value for i in model.nodes], width, label='hydro')
-    rects6 = ax.bar(x + 2*width, [model.transmissionCap['DE', i].value for i in model.nodes], width, label='trans from DE')
-    rects7 = ax.bar(x + 3*width, [model.transmissionCap['DK', i].value for i in model.nodes], width, label='trans from DK')    
-    rects8 = ax.bar(x + 4*width, [model.transmissionCap['SE', i].value for i in model.nodes], width, label='trans from SE')
+    rects5 = ax.bar(x - 2*width, [model.capa[i, 'Hydro'].value for i in model.nodes], width, label='hydro')
+    rects1 = ax.bar(x - 1*width, [model.capa[i, 'Gas'].value for i in model.nodes], width, label='gas')
+    rects2 = ax.bar(x + 0*width, [model.capa[i, 'PV'].value for i in model.nodes], width, label='PV')
+    rects3 = ax.bar(x + 1*width, [model.capa[i, 'Wind'].value for i in model.nodes], width, label='wind')
+    rects4 = ax.bar(x + 2*width, [model.capa[i, 'Battery'].value for i in model.nodes], width, label='battery')
+    rects8 = ax.bar(x + 5*width, [model.transmissionCap['SE', i].value for i in model.nodes], width, label='trans from SE')
+    rects6 = ax.bar(x + 3*width, [model.transmissionCap['DE', i].value for i in model.nodes], width, label='trans from DE')    
+    rects7 = ax.bar(x + 4*width, [model.transmissionCap['DK', i].value for i in model.nodes], width, label='trans from DK')
 
     # Add some text for labels, title and custom x-axis tick labels, etc.
     ax.set_ylabel("installed capacity [MW]")
@@ -303,16 +303,44 @@ def plotAnualProd():
     transmission_prod = [sum([netTransmissions(i, h) for h in model.hours]) for i in model.nodes]
 
     fig, ax = plt.subplots()
-    rects1 = ax.bar(x - 2*width, gas_prod, width, label='gas')
-    rects2 = ax.bar(x - width,   solar_prod, width, label='PV')
-    rects3 = ax.bar(x,           wind_prod, width, label='wind')
-    rects4 = ax.bar(x + width,   battery_prod, width, label='battery')
-    rects5 = ax.bar(x + 2*width, hydro_prod, width, label='hydro')
+    rects5 = ax.bar(x - 2*width, hydro_prod, width, label='hydro')
+    rects1 = ax.bar(x - 1*width, gas_prod, width, label='gas')
+    rects2 = ax.bar(x - 0*width,   solar_prod, width, label='PV')
+    rects3 = ax.bar(x + 1*width,           wind_prod, width, label='wind')
+    rects4 = ax.bar(x + 2*width,   battery_prod, width, label='battery')
     rects6 = ax.bar(x + 3*width, transmission_prod, width, label='transmission')
 
     # Add some text for labels, title and custom x-axis tick labels, etc.
     ax.set_ylabel("Produced energy [MWh]")
     ax.set_title("Anual energy production")
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.legend()
+    fig.tight_layout()
+    plt.show()
+    # Plot installed capacities:
+
+
+
+def plotTransmissions():
+    labels = ['from DE', 'from DK', 'from SE']
+    x = np.arange(len(labels))  # the label locations
+    width = 0.2  # the width of the bars
+
+
+    to_DE = [sum([model.transmission[i, 'DE', h].value for h in model.hours]) for i in model.nodes]
+    to_DK = [sum([model.transmission[i, 'DK', h].value for h in model.hours]) for i in model.nodes]
+    to_SE = [sum([model.transmission[i, 'SE', h].value for h in model.hours]) for i in model.nodes]
+
+
+    fig, ax = plt.subplots()
+    rects1 = ax.bar(x - width, to_DE, width, label='to DE')
+    rects2 = ax.bar(x,         to_DK, width, label='to DK')
+    rects3 = ax.bar(x + width, to_SE, width, label='to SE')
+ 
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    ax.set_ylabel("Transmitted energy [MWh]")
+    ax.set_title("Annual accumulated transmissions")
     ax.set_xticks(x)
     ax.set_xticklabels(labels)
     ax.legend()
@@ -333,11 +361,16 @@ def plotBatteryLevel():
     plt.show()
 
 
-#plot waterlevel
-def plotWaterLevel():
-    hours = range(8759)
-    waterLevel = [model.waterLevel[h].value for h in hours]
-    plt.plot(hours,waterLevel)
+#plot transmission between DE and SE
+def plotTransW1():
+    hours = range(168)    
+    #hours = range(1000, 1168)
+    fig, ax = plt.subplots()
+    DESE = [model.transmission['DE', 'SE', h].value for h in hours]
+    SEDE = [model.transmission['SE', 'DE', h].value for h in hours]
+    plt.plot(hours,DESE, label='DE -> SE')
+    plt.plot(hours,SEDE, label='SE -> DE')
+    ax.legend()
     plt.show()
 
 #plot prod['SV', 'Hydro']
@@ -346,6 +379,14 @@ def plotWaterProd():
     waterProd = [model.prod['SE', 'Hydro', h].value for h in hours]
     plt.plot(hours,waterProd)
     plt.show()
+
+
+def printTransCaps():
+    for sender in model.nodes:
+        for reciever in model.nodes:
+            print("cap " + sender + " -> " + reciever + ": ")
+            print(model.transmissionCap[sender, reciever].value)
+    return
     
 
 if __name__ == '__main__':
@@ -391,8 +432,11 @@ if __name__ == '__main__':
             print(str(t)+"produced: " + str(totProdTech(i,t)))
     
 
-   
+    #plotTransW1()
+    plotWeek1('DE')
     plotInstalledCapacities()
     plotAnualProd()
-    plotDEW1()
+    plotWeek1('SE')
     plotBatteryLevel()
+    plotTransmissions()
+    printTransCaps()
