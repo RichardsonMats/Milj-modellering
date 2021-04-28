@@ -85,8 +85,8 @@ model.capa =         Var(model.nodes, model.techs,              bounds= max_cap,
 model.waterLevel =   Var(model.hours,                           bounds= hydro_bounds, doc='reservoir water level')
 model.batteryLevel = Var(model.nodes, model.hours,              bounds= (0.0, None), doc='saved battery level')
 model.batterySavings = Var(model.nodes, model.hours,            bounds= (0.0, None), doc="How much energy into Battery")
-#model.transmission = Var(model.nodes, model.nodes, model.hours, bounds= (0.0, None), doc='transmission one-way')
-#model.transmissionCap = Var(model.nodes, model.nodes,           bounds= (0.0, None), doc="Transmission capacity")
+model.transmission = Var(model.nodes, model.nodes, model.hours, bounds= (0.0, None), doc='transmission one-way')
+model.transmissionCap = Var(model.nodes, model.nodes,           bounds= (0.0, None), doc="Transmission capacity")
 
 
 
@@ -106,41 +106,27 @@ model.batterySavings = Var(model.nodes, model.hours,            bounds= (0.0, No
 
 
 # 3 The countries' electricity demand should be met at all hours:
-def demand_rule(model, nodes, hours):
-    totProd = sum([model.prod[nodes, t, hours] for t in model.techs])
-    return model.demand[nodes, hours] + model.batterySavings[nodes, hours] <= totProd
+# def demand_rule(model, nodes, hours):
+#     totProd = sum([model.prod[nodes, t, hours] for t in model.techs])
+#     return model.demand[nodes, hours] + model.batterySavings[nodes, hours] <= totProd
 
-#model.demandCon = Constraint(model.nodes, model.hours, rule=demand_rule)
+# model.demandCon = Constraint(model.nodes, model.hours, rule=demand_rule)
 
 def deman2(model, nodes, hours):
     totalProd=0
     transmissionIn = 0
-    transmissionOut =0
+    transmissionOut = 0
 
     for n in model.nodes:
-        transmissionIn = transmissionIn + model.transmission[n, nodes, hours]
+        transmissionIn = transmissionIn + model.transmission[n, nodes, hours]*0.98
         transmissionOut = transmissionOut + model.transmission[n, nodes, hours]
 
     for tech in model.techs:
-        totalProd = totalProd + model.prod[nodes, tech, hours]
+        totalProd = totalProd + model.prod[nodes, tech, hours]*model.mu[tech]
 
-    return totalProd - transmissionOut/0.98 >=model.demand[nodes, hours] + model.batterySavings[nodes, hours] - transmissionIn
+    return totalProd - transmissionOut >=model.demand[nodes, hours] + model.batterySavings[nodes, hours] - transmissionIn
 model.demandConstraint  = Constraint(model.nodes, model.hours, rule=deman2)
 
-
-
-"""
-# 3 The countries' electricity demand should be met at all hours:
-def demand_rule(model, nodes, hours):
-    # totProd[nodes, hours] + transmissionIn[nodes, hours] - transmissionOut[nodes, hours] => demand
-    transmissionIn = sum([model.transmission[n, nodes, hours] for n in model.nodes])
-    transmissionOut = sum([model.transmission[nodes, n, hours] for n in model.nodes])
-    totProd = sum([model.prod[nodes, t, hours] for t in model.techs])
-
-    return totProd - transmissionOut/0.98 >= model.demand[nodes, hours] - transmissionIn + model.batterySavings[nodes, hours]
-
-model.demandCon = Constraint(model.nodes, model.hours, rule=demand_rule)
-"""
 
 #4 The production should always be lower or equal than installed
 def prod_rule(model, nodes, techs, hours):
@@ -189,38 +175,28 @@ model.co2Con = Constraint(rule=co2cap)
 # model.co2Constraint = Constraint(rule=co2CapV2)
 
 
-# extra 
-def startAtZero(model, nodes):
-    return model.batteryLevel[nodes, 0] == 0
 
-model.batteryCon2 = Constraint(model.nodes, rule=startAtZero)
+
 
 
 # 7 Produced electricity that isn't used by demand is stored in batteries, battery not over capacity
 
-def battery_rule(model, nodes, hours):
-    spareEnergy = sum([model.prod[nodes, t, hours] for t in model.techs]) - model.demand[nodes, hours]
-    if hours == 8759:
-        return model.batteryLevel[nodes, 0] == model.batteryLevel[nodes, hours] + spareEnergy - model.prod[nodes, 'Battery', hours]/0.9
-    else:
-        return model.batteryLevel[nodes, hours+1] == model.batteryLevel[nodes, hours] + spareEnergy - model.prod[nodes, 'Battery', hours]/0.9
-
 # Saves into battery
 def batteryConstraint(model, nodes, hours):
     if hours == 0:
-        return model.batteryLevel[nodes, 0] == model.batteryLevel[nodes, 0] - model.prod[nodes, 'Battery', 0]
+        return model.batteryLevel[nodes, 0] == model.batteryLevel[nodes, 8759] - model.prod[nodes, 'Battery', 0] + model.batterySavings[nodes, hours]
     elif hours >0:
         return model.batteryLevel[nodes, hours] == model.batteryLevel[nodes, hours-1] + model.batterySavings[nodes, hours]  - model.prod[nodes, 'Battery', hours]
 model.batteryCon = Constraint(model.nodes, model.hours, rule=batteryConstraint)
 
-# Checks battery is not over capcaity
-def batteryLessThanCap(model, nodes, hours):
-    return model.batterySavings[nodes, hours] <= model.capa[nodes, "Battery"]
-model.batteryCapCon=Constraint(model.nodes, model.hours, rule=batteryLessThanCap)
+# # Checks battery is not over capcaity
+# def batteryLessThanCap(model, nodes, hours):
+#     return model.batterySavings[nodes, hours] <= model.capa[nodes, "Battery"]
+# model.batteryCapCon=Constraint(model.nodes, model.hours, rule=batteryLessThanCap)
 
-def batteryLessThanCap2(model, nodes, hours):
-    return model.batteryLevel[nodes, hours] <=model.capa[nodes, "Battery"]
-model.batteryCapCon2=Constraint(model.nodes, model.hours, rule=batteryLessThanCap2)
+# def batteryLessThanCap2(model, nodes, hours):
+#     return model.batteryLevel[nodes, hours] <=model.capa[nodes, "Battery"]
+# model.batteryCapCon2=Constraint(model.nodes, model.hours, rule=batteryLessThanCap2)
 
 def batteryEnd(model, nodes):
     return model.batteryLevel[nodes, model.hours[8759]] == model.batteryLevel[nodes, 0]
@@ -272,7 +248,7 @@ def objective_rule(model):
             summ = summ + model.capa[i,b]*get_AC(b)
             for h in model.hours:
                 summ = summ + model.prod[i,b,h]*(model.RC[b]+model.FC[b]/model.mu[b])
-    return summ# + transmissionCost()
+    return summ + transmissionCost()
 
 model.objective = Objective(rule=objective_rule, sense=minimize, doc='Objective function')
 
@@ -287,42 +263,32 @@ def totProd(country):
 def totProdTech(country, tech):
     return sum([model.prod[country, tech, h].value for h in model.hours])
 
+##Plots and plotfunctions
 
-def totDemand(country):
-    return sum([model.demand[country, h] for h in model.hours])
-
-def totProd(country):
-    return sum([model.prod[country, b, h].value for h in model.hours for b in model.techs])
-
-def totProdTech(country, tech):
-    return sum([model.prod[country, tech, h].value for h in model.hours])
-
-
-# into a ceartain country
 def netTransmissions(country, hour):
     transIn = sum([model.transmission[n, country, hour].value for n in model.nodes])
     transOut = sum([model.transmission[country, n, hour].value for n in model.nodes])
     return transIn - transOut
 
 # Plot First German Week
-def plotDEW1():
+def plotWeek1(country):
     w1 = range(168)
     week1_hours = [n for n in w1]
     energy_produced = {
-        'Wind'        : [model.prod['DE', 'Wind', h].value/1e3 for h in w1],
-        'PV'          : [model.prod['DE', 'PV', h].value/1e3 for h in w1],
-        'Gas'         : [model.prod['DE', 'Gas', h].value/1e3 for h in w1],
-        'Hydro'       : [model.prod['DE', 'Hydro', h].value/1e3 for h in w1],
-        'Battery'     : [model.prod['DE', 'Battery', h].value/1e3 for h in w1],
-        'Transmission': [netTransmissions('DE', h)/1e3 for h in w1]
+        'PV'          : [model.prod[country, 'PV', h].value/1e3 for h in w1],
+        'Wind'        : [model.prod[country, 'Wind', h].value/1e3 for h in w1],
+        'Gas'         : [model.prod[country, 'Gas', h].value/1e3 for h in w1],
+        'Hydro'       : [model.prod[country, 'Hydro', h].value/1e3 for h in w1],
+        'Battery'     : [model.prod[country, 'Battery', h].value/1e3 for h in w1],
+        'Transmission': [model.transmission['SE', 'DE', h].value/1e3 for h in w1]
     }
 
     fig, ax = plt.subplots()
     ax.stackplot(week1_hours, energy_produced.values(),
              labels=energy_produced.keys())
-    ax.plot(week1_hours, [model.demand['DE', h]/1e3 for h in w1])
+    ax.plot(week1_hours, [model.demand[country, h]/1e3 for h in w1])
     ax.legend(loc='upper left')
-    ax.set_title('Energy produced 1st week in Germany')
+    ax.set_title('Energy produced 1st week in ' + country)
     ax.set_xlabel('Hour')
     ax.set_ylabel('Produced energy in GWh')
     plt.show()
@@ -334,14 +300,14 @@ def plotInstalledCapacities():
     width = 0.15  # the width of the bars
 
     fig, ax = plt.subplots()
-    rects1 = ax.bar(x - 3*width, [model.capa[i, 'Gas'].value for i in model.nodes], width, label='gas')
-    rects2 = ax.bar(x - 2*width, [model.capa[i, 'PV'].value for i in model.nodes], width, label='PV')
-    rects3 = ax.bar(x -   width, [model.capa[i, 'Wind'].value for i in model.nodes], width, label='wind')
-    rects4 = ax.bar(x,           [model.capa[i, 'Battery'].value for i in model.nodes], width, label='battery')
-    rects5 = ax.bar(x + width,   [model.capa[i, 'Hydro'].value for i in model.nodes], width, label='hydro')
-    rects6 = ax.bar(x + 2*width, [model.transmissionCap['DE', i].value for i in model.nodes], width, label='trans from DE')
-    rects7 = ax.bar(x + 3*width, [model.transmissionCap['DK', i].value for i in model.nodes], width, label='trans from DK')    
-    rects8 = ax.bar(x + 4*width, [model.transmissionCap['SE', i].value for i in model.nodes], width, label='trans from SE')
+    rects5 = ax.bar(x - 2*width, [model.capa[i, 'Hydro'].value for i in model.nodes], width, label='hydro')
+    rects1 = ax.bar(x - 1*width, [model.capa[i, 'Gas'].value for i in model.nodes], width, label='gas')
+    rects2 = ax.bar(x + 0*width, [model.capa[i, 'PV'].value for i in model.nodes], width, label='PV')
+    rects3 = ax.bar(x + 1*width, [model.capa[i, 'Wind'].value for i in model.nodes], width, label='wind')
+    rects4 = ax.bar(x + 2*width, [model.capa[i, 'Battery'].value for i in model.nodes], width, label='battery')
+    rects8 = ax.bar(x + 5*width, [model.transmissionCap['SE', i].value for i in model.nodes], width, label='trans from SE')
+    rects6 = ax.bar(x + 3*width, [model.transmissionCap['DE', i].value for i in model.nodes], width, label='trans from DE')    
+    rects7 = ax.bar(x + 4*width, [model.transmissionCap['DK', i].value for i in model.nodes], width, label='trans from DK')
 
     # Add some text for labels, title and custom x-axis tick labels, etc.
     ax.set_ylabel("installed capacity [MW]")
@@ -368,16 +334,44 @@ def plotAnualProd():
     transmission_prod = [sum([netTransmissions(i, h) for h in model.hours]) for i in model.nodes]
 
     fig, ax = plt.subplots()
-    rects1 = ax.bar(x - 2*width, gas_prod, width, label='gas')
-    rects2 = ax.bar(x - width,   solar_prod, width, label='PV')
-    rects3 = ax.bar(x,           wind_prod, width, label='wind')
-    rects4 = ax.bar(x + width,   battery_prod, width, label='battery')
-    rects5 = ax.bar(x + 2*width, hydro_prod, width, label='hydro')
+    rects5 = ax.bar(x - 2*width, hydro_prod, width, label='hydro')
+    rects1 = ax.bar(x - 1*width, gas_prod, width, label='gas')
+    rects2 = ax.bar(x - 0*width,   solar_prod, width, label='PV')
+    rects3 = ax.bar(x + 1*width,           wind_prod, width, label='wind')
+    rects4 = ax.bar(x + 2*width,   battery_prod, width, label='battery')
     rects6 = ax.bar(x + 3*width, transmission_prod, width, label='transmission')
 
     # Add some text for labels, title and custom x-axis tick labels, etc.
     ax.set_ylabel("Produced energy [MWh]")
     ax.set_title("Anual energy production")
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.legend()
+    fig.tight_layout()
+    plt.show()
+    # Plot installed capacities:
+
+
+
+def plotTransmissions():
+    labels = ['from DE', 'from DK', 'from SE']
+    x = np.arange(len(labels))  # the label locations
+    width = 0.2  # the width of the bars
+
+
+    to_DE = [sum([model.transmission[i, 'DE', h].value for h in model.hours]) for i in model.nodes]
+    to_DK = [sum([model.transmission[i, 'DK', h].value for h in model.hours]) for i in model.nodes]
+    to_SE = [sum([model.transmission[i, 'SE', h].value for h in model.hours]) for i in model.nodes]
+
+
+    fig, ax = plt.subplots()
+    rects1 = ax.bar(x - width, to_DE, width, label='to DE')
+    rects2 = ax.bar(x,         to_DK, width, label='to DK')
+    rects3 = ax.bar(x + width, to_SE, width, label='to SE')
+ 
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    ax.set_ylabel("Transmitted energy [MWh]")
+    ax.set_title("Annual accumulated transmissions")
     ax.set_xticks(x)
     ax.set_xticklabels(labels)
     ax.legend()
@@ -398,11 +392,16 @@ def plotBatteryLevel():
     plt.show()
 
 
-#plot waterlevel
-def plotWaterLevel():
-    hours = range(8759)
-    waterLevel = [model.waterLevel[h].value for h in hours]
-    plt.plot(hours,waterLevel)
+#plot transmission between DE and SE
+def plotTransW1():
+    hours = range(168)    
+    #hours = range(1000, 1168)
+    fig, ax = plt.subplots()
+    DESE = [model.transmission['DE', 'SE', h].value for h in hours]
+    SEDE = [model.transmission['SE', 'DE', h].value for h in hours]
+    plt.plot(hours,DESE, label='DE -> SE')
+    plt.plot(hours,SEDE, label='SE -> DE')
+    ax.legend()
     plt.show()
 
 #plot prod['SV', 'Hydro']
@@ -411,6 +410,14 @@ def plotWaterProd():
     waterProd = [model.prod['SE', 'Hydro', h].value for h in hours]
     plt.plot(hours,waterProd)
     plt.show()
+
+
+def printTransCaps():
+    for sender in model.nodes:
+        for reciever in model.nodes:
+            print("cap " + sender + " -> " + reciever + ": ")
+            print(model.transmissionCap[sender, reciever].value)
+    return
 
 if __name__ == '__main__':
     from pyomo.opt import SolverFactory
@@ -455,7 +462,11 @@ if __name__ == '__main__':
             print(str(t)+"produced: " + str(totProdTech(i,t)))
     
 
-    plotDEW1()
+    plotTransW1()
+    plotWeek1('DE')
     plotInstalledCapacities()
     plotAnualProd()
+    plotWeek1('SE')
     plotBatteryLevel()
+    plotTransmissions()
+    printTransCaps()

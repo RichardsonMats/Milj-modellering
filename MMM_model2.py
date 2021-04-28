@@ -19,9 +19,9 @@ lt  = {'Wind' : 25, 'PV' : 25, 'Gas' : 30, 'Hydro' : 80, 'Battery' : 10} # years
 mu  = {'Wind' : 1, 'PV' : 1, 'Gas' : 0.4, 'Hydro' : 1, 'Battery' : 0.9} # conversion efficiency factor
 co2 = {'Wind' : 0, 'PV' : 0, 'Gas' : 0.202, 'Hydro' : 0, 'Battery' : 0} # ton CO2/MWh_fuel
 inf = -1
-maxPot = { 'DE' : {'Wind' : 180000, 'PV' : 460000, 'Gas' : inf, 'Hydro' : 0,      'Battery' : inf}, 
-           'DK' : {'Wind' : 90000,  'PV' : 60000,  'Gas' : inf, 'Hydro' : 0,      'Battery' : inf},
-           'SE' : {'Wind' : 280000, 'PV' : 75000,  'Gas' : inf, 'Hydro' : 14*1e3, 'Battery' : inf}} # GW -> MW
+maxPot = { 'DE' : {'Wind' : 180000, 'PV' : 460000, 'Gas' : inf, 'Hydro' : 0,      'Battery' : 0}, 
+           'DK' : {'Wind' : 90000,  'PV' : 60000,  'Gas' : inf, 'Hydro' : 0,      'Battery' : 0},
+           'SE' : {'Wind' : 280000, 'PV' : 75000,  'Gas' : inf, 'Hydro' : 14*1e3, 'Battery' : 0}} # GW -> MW
 
 
 discountrate = 0.05
@@ -84,7 +84,7 @@ model.prod =         Var(model.nodes, model.techs, model.hours, bounds= (0.0, No
 model.capa =         Var(model.nodes, model.techs,              bounds= max_cap, doc='Generator cap')
 model.waterLevel =   Var(model.hours,                           bounds= hydro_bounds, doc='reservoir water level')
 model.batteryLevel = Var(model.nodes, model.hours,              bounds= (0.0, None), doc='saved battery level')
-#model.batterySavings = Var(model.nodes, model.hours,            bounds= (0.0, None), doc="How much energy into Battery")
+model.batterySavings = Var(model.nodes, model.hours,            bounds= (0.0, None), doc="How much energy into Battery")
 model.transmission = Var(model.nodes, model.nodes, model.hours, bounds= (0.0, None), doc='transmission one-way')
 model.transmissionCap = Var(model.nodes, model.nodes,           bounds= (0.0, None), doc="Transmission capacity")
 
@@ -150,7 +150,7 @@ def co2cap(model):
     target = old_emissions*0.1 # will give an infeasible solution
     return sum([emissions(c) for c in model.nodes]) <= target
 
-model.co2Con = Constraint(rule=co2cap)
+#model.co2Con = Constraint(rule=co2cap)
 
 # extra 
 def startAtZero(model, nodes):
@@ -170,7 +170,7 @@ def battery_rule(model, nodes, hours):
    else:
        return model.batteryLevel[nodes, hours+1] == model.batteryLevel[nodes, hours] + spareEnergy - model.prod[nodes, 'Battery', hours]/0.9
    
-model.batteryCon = Constraint(model.nodes , model.hours, rule=battery_rule)
+#model.batteryCon = Constraint(model.nodes , model.hours, rule=battery_rule)
 
 
 # 8 Transmission cap is the same in both directions
@@ -232,6 +232,7 @@ def totProd(country):
 def totProdTech(country, tech):
     return sum([model.prod[country, tech, h].value for h in model.hours])
 
+### 
 
 # into a ceartain country
 def netTransmissions(country, hour):
@@ -273,10 +274,10 @@ def plotInstalledCapacities():
     rects1 = ax.bar(x - 1*width, [model.capa[i, 'Gas'].value for i in model.nodes], width, label='gas')
     rects2 = ax.bar(x + 0*width, [model.capa[i, 'PV'].value for i in model.nodes], width, label='PV')
     rects3 = ax.bar(x + 1*width, [model.capa[i, 'Wind'].value for i in model.nodes], width, label='wind')
-    rects4 = ax.bar(x + 2*width, [model.capa[i, 'Battery'].value for i in model.nodes], width, label='battery')
-    rects8 = ax.bar(x + 5*width, [model.transmissionCap['SE', i].value for i in model.nodes], width, label='trans from SE')
-    rects6 = ax.bar(x + 3*width, [model.transmissionCap['DE', i].value for i in model.nodes], width, label='trans from DE')    
-    rects7 = ax.bar(x + 4*width, [model.transmissionCap['DK', i].value for i in model.nodes], width, label='trans from DK')
+   # rects4 = ax.bar(x + 2*width, [model.capa[i, 'Battery'].value for i in model.nodes], width, label='battery')
+   # rects8 = ax.bar(x + 5*width, [model.transmissionCap['SE', i].value for i in model.nodes], width, label='trans from SE')
+    #rects6 = ax.bar(x + 3*width, [model.transmissionCap['DE', i].value for i in model.nodes], width, label='trans from DE')    
+    #rects7 = ax.bar(x + 4*width, [model.transmissionCap['DK', i].value for i in model.nodes], width, label='trans from DK')
 
     # Add some text for labels, title and custom x-axis tick labels, etc.
     ax.set_ylabel("installed capacity [MW]")
@@ -433,10 +434,10 @@ if __name__ == '__main__':
     
 
     #plotTransW1()
-    plotWeek1('DE')
+    #plotWeek1('DE')
     plotInstalledCapacities()
-    plotAnualProd()
-    plotWeek1('SE')
-    plotBatteryLevel()
-    plotTransmissions()
-    printTransCaps()
+    #plotAnualProd()
+   # plotWeek1('SE')
+   ## plotBatteryLevel()
+   # plotTransmissions()
+   # printTransCaps()
