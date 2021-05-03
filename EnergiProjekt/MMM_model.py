@@ -83,10 +83,10 @@ def hydro_bounds(model, h):
 model.prod =         Var(model.nodes, model.techs, model.hours, bounds= (0.0, None), doc='tech cap')
 model.capa =         Var(model.nodes, model.techs,              bounds= max_cap, doc='Generator cap')
 model.waterLevel =   Var(model.hours,                           bounds= hydro_bounds, doc='reservoir water level')
-model.batteryLevel = Var(model.nodes, model.hours,              bounds= (0.0, 0.0), doc='saved battery level')
-model.batteryEnergyInto = Var(model.nodes, model.hours,         bounds= (0.0, 0.0), doc="How much energy into Battery")
-model.transmission = Var(model.nodes, model.nodes, model.hours, bounds= (0.0, 0.0), doc='transmission one-way')
-model.transmissionCap = Var(model.nodes, model.nodes,           bounds= (0.0, 0.0), doc="Transmission capacity")
+model.batteryLevel = Var(model.nodes, model.hours,              bounds= (0.0, None), doc='saved battery level')
+model.batteryEnergyInto = Var(model.nodes, model.hours,         bounds= (0.0, None), doc="How much energy into Battery")
+model.transmission = Var(model.nodes, model.nodes, model.hours, bounds= (0.0, None), doc='transmission one-way')
+model.transmissionCap = Var(model.nodes, model.nodes,           bounds= (0.0, None), doc="Transmission capacity")
 
 
 
@@ -155,10 +155,11 @@ def emissions(country):
 
 def co2cap(model):
        old_emissions = sum([125243664.86937965, 8552556.240328295, 4978228.17498443])
+       print(old_emissions)
        target = old_emissions*0.1 # will give an infeasible solution
        return sum([emissions(c) for c in model.nodes]) <= target
 
-#model.co2Con = Constraint(rule=co2cap)
+model.co2Con = Constraint(rule=co2cap)
 
 
 
@@ -313,7 +314,7 @@ def plotAnualProd():
     rects2 = ax.bar(x - 0*width,   solar_prod, width, label='PV')
     rects3 = ax.bar(x + 1*width,           wind_prod, width, label='wind')
     rects4 = ax.bar(x + 2*width,   battery_prod, width, label='battery')
-    #rects6 = ax.bar(x + 3*width, transmission_prod, width, label='transmission')
+    rects6 = ax.bar(x + 3*width, transmission_prod, width, label='transmission')
 
     # Add some text for labels, title and custom x-axis tick labels, etc.
     ax.set_ylabel("Produced energy [MWh]")
