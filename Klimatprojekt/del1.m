@@ -130,9 +130,12 @@ i sin tur binder mer kol i marken.
 Implementera en diskret modell (baserat på ekvation 6) som reproducerar impulssvaren i 
 figur 3 med hjälp av parametervärdena i tabell 1 och ekvation 7.
 %}
+clc
+clf
+clear
 A = [0.113, 0.213, 0.258, 0.273, 0.1430];
 tau0 = [2.0, 12.2, 50.4, 243.3, Inf];
-k = 3.06*10e-3;
+k = 3.06*10^(-3);
 kumUtsl = [0, 140, 560, 1680];
 tau = @(i,u) tau0(i).*(1+k*kumUtsl(u));
 
@@ -161,8 +164,41 @@ atmosfäriska kolstocken (dvs den totala massan C i CO2) multipliceras med en omv
 massa till volymsandelar i atmosfären med ett värde på 0.469 ppmCO2/GtC. Jämför era beräknade 
 koncentrationen med koncentrationerna i koncentrationerRCP45.m. 
 %}
+clc
+clf
+clear
+utslappRCP45
+koncentrationerRCP45
 
+CO2toPPM = 0.469; % (ppm CO2)/Gton C
+A = [0.113 0.213 0.258 0.273 0.1430];
+tau0 = [2.0, 12.2, 50.4, 243.3, Inf];
+k = 3.06*10^(-3);
+%Utsl = CO2Emissions;
+C = CO2ConcRCP45;
 
+tau = @(i,u) tau0(i).*(1+k*CO2Emissions(u));
+
+M = zeros(1, length(CO2Emissions));
+M0 = 600;
+M(1) = 600;
+for t = 2:1:length(CO2Emissions)
+    I = 0;
+    taui = taufunc(tau0, CO2Emissions, t, k);
+
+    for i = 1:t
+        I = I + ifunc(t, i, A, taui)*CO2Emissions(i);
+    end
+    M(t)=M0 + I;
+end
+
+t = linspace(1765, 2500, length(CO2Emissions));
+plot(t, CO2toPPM*M)
+
+hold on
+plot (t,C)
+
+legend('modell','conc');
 
 
 %% Uppgift 5
