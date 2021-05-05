@@ -133,18 +133,24 @@ figur 3 med hjälp av parametervärdena i tabell 1 och ekvation 7.
 A = [0.113, 0.213, 0.258, 0.273, 0.1430];
 tau0 = [2.0, 12.2, 50.4, 243.3, Inf];
 k = 3.06*10e-3;
+kumUtsl = [0, 140, 560, 1680];
+tau = @(i,u) tau0(i).*(1+k*kumUtsl(u));
 
-tau = @(i,t) tau0(i).*(1+k*sum(U(1:t)));
-
-T = length(U);
-I = zeros(1,T);
+T = 500;
+I = zeros(4,T);
 for t = 1:T
-    for i = 1:length(A)
-        I(1,t) = I(1,t) + A(i)*exp(-t/tau(i,t));
+    for u = 1:4
+        for i = 1:length(A)
+            I(u,t) = I(u,t) + A(i)*exp(-t/tau(i,u));
+        end
     end
 end
 clf
-plot(I);
+x = linspace(1,T,T);
+hold on
+for u = 1:4
+    plot(x,I(u,:));
+end
 
 %% Uppgift 4 
 %{
