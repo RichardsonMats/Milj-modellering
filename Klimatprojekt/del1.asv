@@ -7,6 +7,7 @@ volymsandelar. Omvandlingsfaktorn ges av 0.469 ppm CO2/Gton C. Jämför er beräkna
 koldioxidkoncentration med koncentrationen given i koncentrationerRCP45.m. Varför tror ni era
 berknande koncentrationer skiljer sig från den som anges i filen koncentrationerRCP45.m?
 %}
+
 utslappRCP45
 
 
@@ -21,4 +22,5 @@ T = 2500;
 B0 = [600, 600, 1500];
 N = length(CO2Emissions);
 [B, t] = forwardEuler (@dBdT, t0, T, B0, N)
+
 
