@@ -134,7 +134,7 @@ A = [0.113, 0.213, 0.258, 0.273, 0.1430];
 tau0 = [2.0, 12.2, 50.4, 243.3, Inf];
 k = 3.06*10e-3;
 
-tau = @(i,t) tau0(i).*(1+k*sum(U(1:t)));
+tau = @(i,t) tau0(i)*(1+k*sum(U(1:t)));
 
 T = length(U);
 I = zeros(1,T);
@@ -143,8 +143,7 @@ for t = 1:T
         I(1,t) = I(1,t) + A(i)*exp(-t/tau(i,t));
     end
 end
-clf
-plot(I);
+Ipl
 
 %% Uppgift 4 
 %{
