@@ -12,27 +12,13 @@ utslappRCP45
 
 global NPP0; % nettoprimärproduktion förindustriell
 global beta; % koldioxidfertiliseringen
-global B0; % boxarnas begynnelsevärden
-global U; % utsläpp
 NPP0 = 60; 
 beta = 0.35; 
-B0 = [600, 600, 1500];
-U = CO2Emissions;
 
 CO2toPPM = 0.469; % (ppm CO2)/Gton C
 t0 = 1765;
 T = 2500; 
-N = length(U);
-t = linspace(t0 ,T , N ); % A vector to store the time values .
-
-[B, t] = forwardEuler (@dBdT, t);
-
-
-hold on
-plot(t, B(1,:))
-plot(t, B(2,:))
-plot(t, B(3,:))
-axis([1750 2500 0 2500])
-
-legend('B1: Atmosfär','B2: Biomassa ovan mark','B3: under marken');
+B0 = [600, 600, 1500];
+N = length(CO2Emissions);
+[B, t] = forwardEuler (@dBdT, t0, T, B0, N)
 
