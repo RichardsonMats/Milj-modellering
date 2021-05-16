@@ -55,3 +55,5 @@ plot (RFCO2, 'yellow');
 plot (RFCH4, 'black');
 plot(RFN2H, 'red');
 legend('Sum', 'RFCO2', 'RFCH4', 'RFN2H');
+
+
