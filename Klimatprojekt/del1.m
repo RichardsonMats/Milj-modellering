@@ -275,16 +275,21 @@ axis([1750 2500 0 1000]);
 
 
 
-
-
-
-
-
-
-
 %% Uppgift 7
-%{
- Analysera var de antropogena utsläppen av CO2 tar vägen på sikt. Hur mycket ändras de 
-olika kol-stockarna (atmosfär, biomassa, mark och hav) år 2100 jämfört med den förindustriella nivån 
-och hur beror detta på ? och ?? Försök förklara!
-%}
+% Analysera var de antropogena utsläppen av CO2 tar vägen på sikt. 
+% Hur mycket ändras de olika kol-stockarna (atmosfär, biomassa, mark och hav)
+% år 2100 jämfört med den förindustriella nivån och hur beror detta på ? och ??
+% Försök förklara!
+a = 1
+disp("running")
+beta = 0.3;
+hold on
+t = linspace(t0,T,N+1);
+plot(t,B(1,:)*CO2toPPM)
+plot(t,B(2,:)*CO2toPPM)
+plot(t,B(2,:)*CO2toPPM)
+axis([1750 2500 0 1000]);
+legend('B1: Atmosfär','B2: Biomassa ovan mark','B3: under marken');
+title('beta = ' + beta);
+
+
