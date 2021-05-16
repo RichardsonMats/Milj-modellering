@@ -223,6 +223,61 @@ modellresultatet med tidsserien för de harmoniserade värdena givna i koncentrati
 Anpassa ? så att den modellberäknade koncentrationen stämmer hyffsat väl överens med den 
 observerade.
 %}
+clear
+clc
+clf
+utslappRCP45
+koncentrationerRCP45
+CO2toPPM = 0.469; % (ppm CO2)/Gton C
+
+alpha = zeros(3,3);
+alpha(3,1)=45/1500;
+alpha(2,3)=45/600;
+alpha(2,1)=15/600;
+
+beta = 0.3;
+
+B0=[600 600 1500];
+
+NPP0=60;
+NPP=NPP0;
+B(1,1) = B0(1);
+B(2,1) = B0(2);
+B(3,1) = B0(3);
+dBdt1 = 0;
+dBdt2 = 0;
+dBdt3 = 0;
+
+
+
+for k = 1:length(CO2Emissions)
+    dBdt1(k+1) = (alpha(3,1)*B(3,k) + alpha(2,1)*B(2,k)-NPP(k)+CO2Emissions(k));
+    B(1, k+1) = mFunc(k+1, dBdt1);
+    dBdt2(k+1) = NPP(k) - alpha(2,3)*B(2,k) - alpha(2,1)*B(2,k);
+    dBdt3(k+1) =  alpha(2,3)*B(2,k)-alpha(3,1)*B(3,k);
+    
+    B(2, k+1)=B(2,k) + dBdt2(k);
+    B(3, k+1)= B(3,k) + dBdt3(k);
+    
+    NPP(k+1) = NPP0 * (1+ beta * log(B(1, k+1)/B0(1)));
+end
+
+t0 = 1765;
+T=2500;
+N=length(CO2Emissions);
+t = linspace(t0,T,N);
+plot(t, CO2ConcRCP45);
+hold on
+t = linspace(t0,T,N+1);
+plot(t,B(1,:)*CO2toPPM)
+
+axis([1750 2500 0 1000]);
+
+
+
+
+
+
 
 
 
