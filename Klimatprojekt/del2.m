@@ -32,11 +32,14 @@ plot(CO2RadForc, 'blue')
 
 clc 
 clf
+radiativeForcingRCP45
 
 RFCO2 = zeros(1, length(CO2ConcRCP45));
 RFCH4 = zeros(1, length(CH4Conc));
 RFN2H = zeros(1, length(N2OConc));
 summa = zeros(1, length(CH4Conc));
+
+
 
 pCO0=CO2ConcRCP45(1);
 pCH40=CH4Conc(1);
@@ -55,8 +58,43 @@ t = linspace(t0,T,736);
 plot (t, summa, 'blue');
 hold on
 plot (t, RFCO2, 'yellow');
+plot(t, CO2RadForc, 'm');
 plot (t, RFCH4, 'black');
 plot(t, RFN2H, 'red');
-legend('Sum', 'RFCO2', 'RFCH4', 'RFN2H');
+plot(t, totRadForcAerosols, 'green');
+plot(t, totRadForcExclCO2AndAerosols, 'c')
+legend('Sum', 'RFCO2', 'other RFCO2', 'RFCH4', 'RFN2H', 'Aero', 'tot other');
+xlabel('year') 
+ylabel('change in absorbed effect from sun [W/m^2]')
 
+
+%% Uppgift 10 
+%{ 
+Diskretisera ekvationerna 10& 11, användförslagsvis en Euler framåt metod 
+med årligt tidssteg.Använd de diskretiserade versionerna av ekvationerna 
+10&11tillsammans med parametervärden nedan för att simulera energibalansmodellen. 
+a)Testa modellen genom att analysera temperatursvaret baserat på ett radiative
+forcing steg på 1 W/m2. Vad blir den simulerade jämviktstemperaturen? 
+Verifiera numeriskt genom att göra modellens tidshorisont tillräcklig lång 
+(jämviktstemperatur är ??1=??2=????, det är bra om ni inser detta från 
+ekvation 10& 11). 
+%} 
+
+% Parametervärden:
+% ? = klimatkänslighetsparametern = 0.8 [K?W-1?m2], spann 0.5-1.3 [K?W-1?m2].
+% ?= utbyteskoefficienten=0.5 [W?K-1?m-2], spann 0.2-1 [W?K-1?m-2]. 
+% RF = radiative forcing [W/m2].
+% c = Vattnets specifika värmekapacitet = 4186 (J/kg)/K.
+% ?= Vattnets densitet =1020 kg/m3
+% h = Ytboxens effektiva djup = 50 m.
+% C1= c?h??= Ytboxens effektiva värmekapacitet. Ni får räkna om så att parametern har enheten[W?yr?K-1?m-2].
+% d= Djuphavsboxens effektiva djup = 2000 m.
+% C2= c?d??= Djuphavsboxens effektiva värmekapacitet. Ni får räkna om så att parametern har enheten[W?yr?K-1?m-2].
+
+lambda = 0.8;
+kappa = 0.5;
+c = 4186;
+rho = 1020;
+h = 50
+d = 2000
 
