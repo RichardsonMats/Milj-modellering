@@ -238,6 +238,7 @@ alpha(2,1)=15/600;
 
 B0=[600 600 1500];
 
+beta = 0.3;
 NPP0=60;
 NPP=NPP0;
 B(1,1) = B0(1);
@@ -263,6 +264,21 @@ t0 = 1765;
 T = 2500;
 N = length(CO2Emissions);
 t = linspace(t0,T,N);
+
+B0tot = sum(B0);
+Emtot = zeros(1,length(CO2Emissions));
+Emtot(1) = B0tot;
+Bsea = zeros(1,length(CO2Emissions));
+for i = 1:length(CO2Emissions)-1 
+    Emtot(i+1) = Emtot(i) + CO2Emissions(i);
+    Bsea(i+1) = Emtot(i+1) - B(1,i+1) - B(2,i+1) - B(3,i+1);
+end    
+
+disp("atm: " + B(1,(2100-1765)))
+disp("bio: " + B(2,(2100-1765)))
+disp("ber: " + B(3,(2100-1765)))
+disp("hav: " + Bsea(2100-1765))
+
 plot(t, CO2ConcRCP45);
 hold on
 t = linspace(t0,T,N+1);
@@ -273,73 +289,23 @@ axis([1750 2500 0 1000]);
 %% Uppgift 7
 % Analysera var de antropogena utsläppen av CO2 tar vägen på sikt. 
 % Hur mycket ändras de olika kol-stockarna (atmosfär, biomassa, mark och hav)
-% år 2100 jämfört med den förindustriella nivån och hur beror detta på ? och ??
+% år 2100 jämfört med den förindustriella nivån och hur beror detta på k
+% och beta?
 % Försök förklara!
+%{ 
+                          atmosfär  biomassa  underjord  hav
+         förindustriellt:     600       600       1500     0
+beta=0.1, k=3.06*10^(-3):    1321       647       1601   404
+beta=0.3, k=3.06*10^(-3):    1153       717       1753   350
+beta=0.7, k=3.06*10^(-3):     965       798       1935   274
 
-subplot(2,2,1)
-beta = 0.15;
-hold on
-t = linspace(t0,T,N+1);
-plot(t,B(1,:), 'cyan')
-plot(t,B(2,:), 'green')
-plot(t,B(3,:), 'black')
-B0tot = sum(B0)
-Emtot = zeros(1,length(CO2Emissions))
-Emtot(1) = B0tot
-Bsea = zeros(1,length(CO2Emissions))
-for i = 1:length(CO2Emissions)-1 
-    Emtot(i+1) = Emtot(i) + CO2Emissions(i);
-    Bsea(i+1) = Emtot(i+1) - B(1,i+1) - B(2,i+1) - B(3,i+1);
-end    
-t(end) = [];
-%plot(t, Emtot)
-plot(t, Bsea, 'blue')
-axis([1750 2500 0 2500]);
-legend('Atmosfär','Biomassa','berg', 'havet');
-title('beta = 0.15, k = 3.06*10^-3');
+beta=0.3, k=1.06*10^(-3):    1085       706       1732   449
+beta=0.3, k=3.06*10^(-3):    1153       717       1753   350
+beta=0.3, k=6.06*10^(-3):    1204       724       1767   277
+%}
 
-subplot(2,2,2)
-beta = 0.3;
-hold on
-t = linspace(t0,T,N+1);
-plot(t,B(1,:), 'cyan')
-plot(t,B(2,:), 'green')
-plot(t,B(3,:), 'black')
-B0tot = sum(B0)
-Emtot = zeros(1,length(CO2Emissions))
-Emtot(1) = B0tot
-Bsea = zeros(1,length(CO2Emissions))
-for i = 1:length(CO2Emissions)-1 
-    Emtot(i+1) = Emtot(i) + CO2Emissions(i);
-    Bsea(i+1) = Emtot(i+1) - B(1,i+1) - B(2,i+1) - B(3,i+1);
-end    
-t(end) = [];
-%plot(t, Emtot)
-plot(t, Bsea, 'blue')
-axis([1750 2500 0 2500]);
-legend('Atmosfär','Biomassa','berg', 'havet');
-title('beta = 0.3, k = 3.06*10^-3;');
 
-subplot(2,2,3)
-beta = 0.6;
-hold on
-t = linspace(t0,T,N+1);
-plot(t,B(1,:), 'cyan')
-plot(t,B(2,:), 'green')
-plot(t,B(3,:), 'black')
-B0tot = sum(B0)
-Emtot = zeros(1,length(CO2Emissions))
-Emtot(1) = B0tot
-Bsea = zeros(1,length(CO2Emissions))
-for i = 1:length(CO2Emissions)-1 
-    Emtot(i+1) = Emtot(i) + CO2Emissions(i);
-    Bsea(i+1) = Emtot(i+1) - B(1,i+1) - B(2,i+1) - B(3,i+1);
-end    
-t(end) = [];
-%plot(t, Emtot)
-plot(t, Bsea, 'blue')
-axis([1750 2500 0 2500]);
-legend('Atmosfär','Biomassa','berg', 'havet');
-title('beta = 0.6, k = 3.06*10^{-3};');
+
+
 
 

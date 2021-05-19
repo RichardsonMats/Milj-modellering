@@ -49,11 +49,14 @@ for g = 1:length(CO2ConcRCP45)
     summa (g) = RFCO2(g)+ RFCH4(g) + RFN2H(g);
 end
 
-plot (summa, 'blue');
+t0 = 1765;
+T = 2500;
+t = linspace(t0,T,736);
+plot (t, summa, 'blue');
 hold on
-plot (RFCO2, 'yellow');
-plot (RFCH4, 'black');
-plot(RFN2H, 'red');
+plot (t, RFCO2, 'yellow');
+plot (t, RFCH4, 'black');
+plot(t, RFN2H, 'red');
 legend('Sum', 'RFCO2', 'RFCH4', 'RFN2H');
 
 
