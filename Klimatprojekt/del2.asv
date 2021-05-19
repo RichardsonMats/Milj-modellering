@@ -108,16 +108,17 @@ C2 = c*d*rho*yr;
 % C1 * dT1dt = RF - dT2 / lambda - kappa*(dT1 - dT2)
 % C2 * dT2dt = kappa*(dT1 - dT2)
 
-N = 736;
+
 t0 = 1765;
-T = 2500;
+T = 5000;
+N = T-t0;
 t = linspace(t0,T,N);
 
 dT1 = zeros(1,N);
 dT2 = zeros(1,N);
 
 for i=1:N-1
-    dT1(i+1) = dT1(i) + (RF - dT-13(i)/lambda - kappa*(dT1(i) - dT2(i)))/C1;
+    dT1(i+1) = dT1(i) + (RF - dT1(i)/lambda - kappa*(dT1(i) - dT2(i)))/C1;
     dT2(i+1) = dT2(i) + (kappa*(dT1(i) - dT2(i)))/C2;
 end
 
@@ -126,5 +127,41 @@ plot(t, dT1, 'c');
 plot(t, dT2, 'b');
 legend('ythav', 'djuphav');
 
+%%b) Analysera vilken effekt klimatkänslighetsparameter ? och ? har på tiden det tar att uppnå 
+%jämviktstemperatur. Den transienta fasen, dvs fram till systemet når jämvikt, kan analyseras 
+%med hjälp av att beräkna "e-folding time", dvs tiden det tar det innan temperatursvaret svaret 
+%når 1-e
+%-1
+%av sin jämviktsnivå, för olika värden på klimatkänslighetsparameter ? och ?. 
+%Rimliga värden för ? är mellan 0.5 och 1.3 K/(W/m2
+%) och för ? mellan 0.2 och 1 [W?K -1
+%?m-2
+%]. 
+%Försök att intuitivt förstå resultaten. Försök att förstå varför ??1 och ??2 utvecklas som de gör 
+%och hur de beror på valet av ? och ?.
+
+clc
+clf
+
+totalRadForce = totRadForcExclCO2AndAerosols + CO2RadForc + totRadForcAerosols;
+
+N = length(totalRadForce);
+dT1 = zeros(1,N);
+dT2 = zeros(1,N);
+T1 = zeros(1,N);
+T2 = zeros(1,N);
+
+kappa = 0.2;
+lambda = 0.5;
+
+RF =1;
+
+time =0;
+while 
+for i=1:N-1
+    dT1(i+1) = dT1(i) + (RF - dT1(i)/lambda - kappa*(dT1(i) - dT2(i)))/C1;
+    dT2(i+1) = dT2(i) + (kappa*(dT1(i) - dT2(i)))/C2;
+    time = time+1;
+end
 
 
