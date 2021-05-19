@@ -279,10 +279,10 @@ disp("bio: " + B(2,(2100-1765)))
 disp("ber: " + B(3,(2100-1765)))
 disp("hav: " + Bsea(2100-1765))
 
-plot(t, CO2ConcRCP45);
+plot(t, CO2ConcRCP45, 'r');
 hold on
 t = linspace(t0,T,N+1);
-plot(t,B(1,:)*CO2toPPM)
+plot(t,B(1,:)*CO2toPPM, 'g')
 
 axis([1750 2500 0 1000]);
 

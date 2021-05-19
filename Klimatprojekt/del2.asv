@@ -24,6 +24,10 @@ end
 plot(RFCO2, 'green')
 hold on
 plot(CO2RadForc, 'blue')
+legend('calculated RF', 'given RF')
+ylabel('W/m^2');
+xlabel('years');
+title('radiative forcing from CO2 emissions')
 %% Uppgift 9: Summera RF för andra klimatpåverkande ämnen och RF för aerosoler, dessa finner du i
 %filen radiativeForcingRCP45.m. Multiplicera RF för aerosoler med en skalfaktor, s, med
 %standardvärde lika med 1. I denna laboration kommer vi låta s vara 1, men i det avslutande
@@ -39,17 +43,17 @@ RFCH4 = zeros(1, length(CH4Conc));
 RFN2H = zeros(1, length(N2OConc));
 summa = zeros(1, length(CH4Conc));
 
-
+s = 1;
 
 pCO0=CO2ConcRCP45(1);
 pCH40=CH4Conc(1);
 pN20=N2OConc(1);
 
 for g = 1:length(CO2ConcRCP45)
-    RFCO2(g)= 5.35 * log(CO2ConcRCP45(g)/pCO0);
-    RFCH4(g)=5.35*log(CH4Conc(g)/pCH40);
-    RFN2H(g)=5.35*log(N2OConc(g)/pN20);
-    summa (g) = RFCO2(g)+ RFCH4(g) + RFN2H(g);
+    RFCO2(g) = 5.35*log(CO2ConcRCP45(g)/pCO0);
+    RFCH4(g) = 5.35*log(CH4Conc(g)/pCH40);
+    RFN2H(g) = 5.35*log(N2OConc(g)/pN20);
+    summa(g) = RFCO2(g)+ RFCH4(g) + RFN2H(g);
 end
 
 t0 = 1765;
@@ -82,7 +86,7 @@ ekvation 10& 11).
 
 % Parametervärden:
 % lambda = klimatkänslighetsparametern = 0.8 [K?W-1?m2], spann 0.5-1.3 [K?W-1?m2].
-% kappa = utbyteskoefficienten=0.5 [W?K-1?m-2], spann 0.2-1 [W?K-1?m-2]. 
+% kappa = utbyteskoefficienten = 0.5 [W?K-1?m-2], spann 0.2-1 [W?K-1?m-2]. 
 % RF = radiative forcing [W/m2].
 % c = Vattnets specifika värmekapacitet = 4186 (J/kg)/K.
 % rho = Vattnets densitet =1020 kg/m3
@@ -110,7 +114,7 @@ C2 = c*d*rho*yr;
 
 
 t0 = 1765;
-T = 5000;
+T = 1965;
 N = T-t0;
 t = linspace(t0,T,N);
 
@@ -143,47 +147,102 @@ legend('ythav', 'djuphav');
 clc
 clf
 
-totalRadForce = totRadForcExclCO2AndAerosols + CO2RadForc + totRadForcAerosols;
-
-N = length(totalRadForce);
+t0 = 1765;
+T = 5000;
+N = T-t0;
+t = linspace(t0,T,N);
 dT1 = zeros(1,N);
 dT2 = zeros(1,N);
-T1 = zeros(1,N);
-T2 = zeros(1,N);
 
-kappa = 0.2; % 0.2 - 1
-lambda = 0.9; % 0.5 - 1.3
 
+kappa = 1.0; % 0.2 - 1
+lambda = 0.8; % 0.5 - 1.3
 RF = 1;
 
-
 time = 1;
-stop = 5000;
-while time <= stop & (konvT1 <= (1-exp(-1)) & konvT2 <= (1-exp(-1)))
-    for i=1:N-1
-        dT1(i+1) = dT1(i) + (RF - dT1(i)/lambda - kappa*(dT1(i) - dT2(i)))/C1;
-        dT2(i+1) = dT2(i) + (kappa*(dT1(i) - dT2(i)))/C2;
-        konvT1 = dT1(i+1)/(lambda*RF);
-        konvT2 = dT2(i+1)/(lambda*RF);
-        if(
-        time = time+1;
-        konvT1 = dT1/(lambda*RF); 
-        konvT2 = dT2/(lambda*RF); 
+for i=1:N-1
+    dT1(i+1) = dT1(i) + (RF - dT1(i)/lambda - kappa*(dT1(i) - dT2(i)))/C1;
+    dT2(i+1) = dT2(i) + (kappa*(dT1(i) - dT2(i)))/C2;
+    konvT1 = dT1(i+1)/(lambda*RF);
+    konvT2 = dT2(i+1)/(lambda*RF);
+    if(konvT1 >= (1-exp(-1)) && konvT2 >= (1-exp(-1)))
+        break
     end
+    time = time+1;
 end
 
 % disp("lambda = " + lambda + ", kappa = " + kappa + ": " + time)
 disp("   " + lambda + "   " + kappa + "   " + time)
 
 %{
+%Lambda är vilken temperatur och kappa är hur fort vi kommer dit
 lambda kappa years
-   0.5   0.5   735
-   0.7   0.5   735
-   0.9   0.5   735
+   0.5   0.5   680
+   0.7   0.5   736
+   0.9   0.5   791
+   1.1   0.5   847
+   1.3   0.5   902
 
+   0.8   0.2   1576
+   0.8   0.4   899
+   0.8   0.6   673
+   0.8   0.8   561
+   0.8   1.0   493
 %}
 
+%% c)
+%{ 
+C: Analysera energiflödena (radiative forcing, energiupptag i havet och 
+utgående värmestrålning till rymden) för steget och de parameterval som ni
+använde i uppgift 10b. Hur beror havets värmeupptag och värmestrålningen 
+till rymden på ? och och ?? Analysera flödena för tidshorisont på 200 år och 
+försök förstå resultaten intuitivt. 
+%}
+clc
+clf
 
+% params = [kappa, lambda]
+params = [[0.2, 0.8], [1.0, 0.8], [0.5, 0.5], [0.5, 1.3]] 
+RF = 1;
 
+t0 = 1765;
+T = 1765+200;
+N = T-t0;
+t = linspace(t0,T,N);
+dT1 = zeros(4,N);
+dT2 = zeros(4,N);
 
+for p=1:4
+    for i=1:N-1
+        dT1(p,i+1) = dT1(p,i) + (RF - dT1(p,i)/params(p,2) - params(p,1)*(dT1(p,i) - dT2(p,i)))/C1;
+        dT2(p,i+1) = dT2(p,i) + (params(1)*(dT1(p,i) - dT2(p,i)))/C2;
+    end
+end
+subplot(2,2,1)
+hold on
+plot(t, dT1(1,1:200)/lambda, 'r');
+plot(t, ones(1,200)*RF, 'g');
+plot(t, kappa*(dT1(1,1:200)-dT2(1,1:200)), 'b')
+legend('till rymden', 'RF', 'till djup havet')
+
+subplot(2,2,2)
+hold on
+plot(t, dT1(2,1:200)/lambda, 'r');
+plot(t, ones(1,200)*RF, 'g');
+plot(t, kappa*(dT1(2,1:200)-dT2(2,1:200)), 'b')
+legend('till rymden', 'RF', 'till djup havet')
+
+subplot(2,2,3)
+hold on
+plot(t, dT1(3,1:200)/lambda, 'r');
+plot(t, ones(1,200)*RF, 'g');
+plot(t, kappa*(dT1(3,1:200)-dT2(3,1:200)), 'b')
+legend('till rymden', 'RF', 'till djup havet')
+
+subplot(2,2,4)
+hold on
+plot(t, dT1(4,1:200)/lambda, 'r');
+plot(t, ones(1,200)*RF, 'g');
+plot(t, kappa*(dT1(4,1:200)-dT2(4,1:200)), 'b')
+legend('till rymden', 'RF', 'till djup havet')
 
