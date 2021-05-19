@@ -81,11 +81,11 @@ ekvation 10& 11).
 %} 
 
 % Parametervärden:
-% ? = klimatkänslighetsparametern = 0.8 [K?W-1?m2], spann 0.5-1.3 [K?W-1?m2].
-% ?= utbyteskoefficienten=0.5 [W?K-1?m-2], spann 0.2-1 [W?K-1?m-2]. 
+% lambda = klimatkänslighetsparametern = 0.8 [K?W-1?m2], spann 0.5-1.3 [K?W-1?m2].
+% kappa = utbyteskoefficienten=0.5 [W?K-1?m-2], spann 0.2-1 [W?K-1?m-2]. 
 % RF = radiative forcing [W/m2].
 % c = Vattnets specifika värmekapacitet = 4186 (J/kg)/K.
-% ?= Vattnets densitet =1020 kg/m3
+% rho = Vattnets densitet =1020 kg/m3
 % h = Ytboxens effektiva djup = 50 m.
 % C1= c?h??= Ytboxens effektiva värmekapacitet. Ni får räkna om så att parametern har enheten[W?yr?K-1?m-2].
 % d= Djuphavsboxens effektiva djup = 2000 m.
@@ -143,34 +143,49 @@ legend('ythav', 'djuphav');
 clc
 clf
 
-totalRadForce = totRadForcExclCO2AndAerosols + CO2RadForc + totRadForcAerosols;
-
-N = length(totalRadForce);
+t0 = 1765;
+T = 5000;
+N = T-t0;
+t = linspace(t0,T,N);
 dT1 = zeros(1,N);
 dT2 = zeros(1,N);
-T1 = zeros(1,N);
-T2 = zeros(1,N);
 
-kappa = 0.2;
-lambda = 0.5;
 
-RF =1;
+kappa = 1.0; % 0.2 - 1
+lambda = 0.8; % 0.5 - 1.3
+RF = 1;
 
-konvDiffT1 =lambda*RF - dT1; 
-konvDiffT2 =lambda*RF - dT2; 
-
-time =0;
-stop = 5000;
-while time<=stop && konvDiffT1 >=(1-exp(-1))&& konvDiffT2 >=(1-exp(-1))
-    for i=1:N-1
-        dT1(i+1) = dT1(i) + (RF - dT1(i)/lambda - kappa*(dT1(i) - dT2(i)))/C1;
-        dT2(i+1) = dT2(i) + (kappa*(dT1(i) - dT2(i)))/C2;
-        time = time+1;
-        konvDiffT1 =lambda*RF - dT1; 
-        konvDiffT2 =lambda*RF - dT2; 
+time = 1;
+for i=1:N-1
+    dT1(i+1) = dT1(i) + (RF - dT1(i)/lambda - kappa*(dT1(i) - dT2(i)))/C1;
+    dT2(i+1) = dT2(i) + (kappa*(dT1(i) - dT2(i)))/C2;
+    konvT1 = dT1(i+1)/(lambda*RF);
+    konvT2 = dT2(i+1)/(lambda*RF);
+    if(konvT1 >= (1-exp(-1)) & konvT2 >= (1-exp(-1)))
+        break
     end
-
+    time = time+1;
 end
 
-a=33
+% disp("lambda = " + lambda + ", kappa = " + kappa + ": " + time)
+disp("   " + lambda + "   " + kappa + "   " + time)
+
+%{
+lambda kappa years
+   0.5   0.5   680
+   0.7   0.5   736
+   0.9   0.5   791
+   1.1   0.5   847
+   1.3   0.5   902
+
+   0.8   0.2   1576
+   0.8   0.4   899
+   0.8   0.6   673
+   0.8   0.8   561
+   0.8   1.0   493
+%}
+
+
+
+
 
