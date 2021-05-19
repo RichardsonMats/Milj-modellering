@@ -108,16 +108,17 @@ C2 = c*d*rho*yr;
 % C1 * dT1dt = RF - dT2 / lambda - kappa*(dT1 - dT2)
 % C2 * dT2dt = kappa*(dT1 - dT2)
 
-N = 736;
+
 t0 = 1765;
-T = 2500;
+T = 5000;
+N = T-t0;
 t = linspace(t0,T,N);
 
 dT1 = zeros(1,N);
 dT2 = zeros(1,N);
 
 for i=1:N-1
-    dT1(i+1) = dT1(i) + (RF - dT-13(i)/lambda - kappa*(dT1(i) - dT2(i)))/C1;
+    dT1(i+1) = dT1(i) + (RF - dT1(i)/lambda - kappa*(dT1(i) - dT2(i)))/C1;
     dT2(i+1) = dT2(i) + (kappa*(dT1(i) - dT2(i)))/C2;
 end
 
@@ -125,6 +126,8 @@ hold on
 plot(t, dT1, 'c');
 plot(t, dT2, 'b');
 legend('ythav', 'djuphav');
+
+
 
 
 
