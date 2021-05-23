@@ -1,5 +1,4 @@
-function summa = innerSum(t1, t2, U)
-    parameters
+function summa = innerSum(t1, t2, U, k)
     summa =0;
     A = [0.113 0.213 0.258 0.273 0.1430];
     tau0 = [2.0, 12.2, 50.4, 243.3, Inf];

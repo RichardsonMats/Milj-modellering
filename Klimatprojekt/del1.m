@@ -196,7 +196,7 @@ rent principiellt.
 
 
 
-%% Uppgift 6 
+%% Uppgift 6
 %{
 Koppla samman impulsresponsmodellen för havets upptag av CO2 med boxmodellen för 
 biosfärens upptag av CO2. Ni måste här ersätta utsläppen, U(t), i ekvation 8 med högerledet i ekvation 
@@ -212,23 +212,25 @@ clc
 clf
 parameters
 
+
 alpha = zeros(3,3);
 alpha(3,1)=45/1500;
 alpha(2,3)=45/600;
 alpha(2,1)=15/600;
 
-
-NPP = NPP0;
+NPP = zeros(1,length(CO2Emissions));
+NPP(1) = NPP0;
 B(1,1) = B0(1);
 B(2,1) = B0(2);
 B(3,1) = B0(3);
-dBdt1 = 0;
-dBdt2 = 0;
-dBdt3 = 0;
+dBdt1 = zeros(1,length(CO2Emissions));
+dBdt2 = zeros(1,length(CO2Emissions));
+dBdt3 = zeros(1,length(CO2Emissions));
+kParam = k;
 
 for k = 1:length(CO2Emissions)
-    dBdt1(k+1) = (alpha(3,1)*B(3,k) + alpha(2,1)*B(2,k)-NPP(k)+CO2Emissions(k));
-    B(1, k+1) = mFunc(k+1, dBdt1);
+    dBdt1(k+1) = (alpha(3,1)*B(3,k) + alpha(2,1)*B(2,k)- NPP(k)+CO2Emissions(k));
+    B(1, k+1) = mFunc(k+1, dBdt1, kParam);
     dBdt2(k+1) = NPP(k) - alpha(2,3)*B(2,k) - alpha(2,1)*B(2,k);
     dBdt3(k+1) =  alpha(2,3)*B(2,k)-alpha(3,1)*B(3,k);
     
@@ -245,6 +247,7 @@ B0tot = sum(B0);
 Emtot = zeros(1,length(CO2Emissions));
 Emtot(1) = B0tot;
 Bsea = zeros(1,length(CO2Emissions));
+
 for i = 1:length(CO2Emissions)-1 
     Emtot(i+1) = Emtot(i) + CO2Emissions(i);
     Bsea(i+1) = Emtot(i+1) - B(1,i+1) - B(2,i+1) - B(3,i+1);

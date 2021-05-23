@@ -44,7 +44,9 @@ pCO0=CO2ConcRCP45(1);
 pCH40=CH4Conc(1);
 pN20=N2OConc(1);
 
+
 for g = 1:length(CO2ConcRCP45)
+    % fråga om 5.35 ska användas för formeln även till andra gaser än CO2?
     RFCO2(g) = 5.35*log(CO2ConcRCP45(g)/pCO0);
     RFCH4(g) = 5.35*log(CH4Conc(g)/pCH40);
     RFN2H(g) = 5.35*log(N2OConc(g)/pN20);
