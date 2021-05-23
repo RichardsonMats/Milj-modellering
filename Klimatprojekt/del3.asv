@@ -67,8 +67,7 @@ for g = 1:length(CO2ConcRCP45)
     RFCO2(g) = 5.35*log(CO2_change/pCO0);
     RFCH4(g) = 5.35*log(CH4Conc(g)/pCH40);
     RFN2H(g) = 5.35*log(N2OConc(g)/pN20);
-    RFtot(g) = RFCO2(g) + RFCH4(g) + RFN2H(g) + s*totRadForcAerosols(g)
-    + totRadForcExclCO2AndAerosols(g);
+    RFtot(g) = RFCO2(g) + RFCH4(g) + RFN2H(g) + s*totRadForcAerosols(g) + totRadForcExclCO2AndAerosols(g);
 end
 
 %{
@@ -95,6 +94,7 @@ t_stop = 2019;
 N = t_stop - t_start;
 t = linspace(t_start, t_stop, N);
 
+
 dT1 = zeros(1,N);
 dT2 = zeros(1,N);
 
@@ -105,14 +105,11 @@ for i=1:N-1
     dT2(i+1) = dT2(i) + (kappa*(dT1(i) - dT2(i)))/C2;
 end
 
-disp(length(dT1))
-disp(length(TAnomali))
 
 hold on
 plot(t, dT1, 'c');
-plot(t, dT2, 'b');
 plot(t, TAnomali, 'black');
-legend('ythav', 'djuphav');
+legend('ythav', 'NASA');
 
 
 
