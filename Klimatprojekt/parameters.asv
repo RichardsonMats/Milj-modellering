@@ -10,7 +10,6 @@ B0 = [600, 600, 1500];
 % mått på hur effektivt fotosyntesen omvandlar C02 till biomassa
 beta = 0.3; % 0.1 - 0.8
 % nettoprimärproduktion innan industriella revolutionen
-NPP0 = 60;
 
 
 % DEL 2: 

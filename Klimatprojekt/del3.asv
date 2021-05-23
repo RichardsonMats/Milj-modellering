@@ -1,0 +1,7 @@
+clear 
+clc 
+clf
+parameters
+
+disp(beta)
+beta = 
