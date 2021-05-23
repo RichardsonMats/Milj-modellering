@@ -104,8 +104,8 @@ dT1 = zeros(1,N);
 dT2 = zeros(1,N);
 
 for i=1:N-1
-    dT1(i+1) = dT1(i) + (RF - dT1(i)/lambda - kappa*(dT1(i) - dT2(i)))/C1;
-    dT2(i+1) = dT2(i) + (kappa*(dT1(i) - dT2(i)))/C2;
+    dT1(i+1) = (RF - dT1(i)/lambda - kappa*(dT1(i) - dT2(i)))/C1;
+    dT2(i+1) =  (kappa*(dT1(i) - dT2(i)))/C2;
 end
 
 hold on

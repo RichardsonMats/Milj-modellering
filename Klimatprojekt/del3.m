@@ -17,13 +17,14 @@ dBdt1 = zeros(1,length(CO2Emissions));
 dBdt2 = zeros(1,length(CO2Emissions));
 dBdt3 = zeros(1,length(CO2Emissions));
 kParam = k;
+beta = 0.28;
+
 
 for k = 1:length(CO2Emissions)
     dBdt1(k+1) = (alpha(3,1)*B(3,k) + alpha(2,1)*B(2,k)- NPP(k)+CO2Emissions(k));
     B(1, k+1) = mFunc(k+1, dBdt1, kParam);
     dBdt2(k+1) = NPP(k) - alpha(2,3)*B(2,k) - alpha(2,1)*B(2,k);
     dBdt3(k+1) =  alpha(2,3)*B(2,k)-alpha(3,1)*B(3,k);
-    
     B(2, k+1)=B(2,k) + dBdt2(k);
     B(3, k+1)= B(3,k) + dBdt3(k);
     
@@ -43,7 +44,7 @@ for i = 1:length(CO2Emissions)-1
     Bsea(i+1) = Emtot(i+1) - B(1,i+1) - B(2,i+1) - B(3,i+1);
 end    
 
-disp("kolstockar år 2500 med k = " + k + ", beta = " + beta)
+disp("kolstockar år 2500 med k = " + kParam + ", beta = " + beta)
 disp("atm: " + B(1,(2100-1765)))
 disp("bio: " + B(2,(2100-1765)))
 disp("ber: " + B(3,(2100-1765)))
@@ -65,10 +66,12 @@ for g = 1:length(CO2ConcRCP45)
     % fråga om 5.35 ska användas för formeln även till andra gaser än CO2?
     CO2_change = (B(1,g))/CO2toPPM;
     RFCO2(g) = 5.35*log(CO2_change/pCO0);
-    RFCH4(g) = 5.35*log(CH4Conc(g)/pCH40);
-    RFN2H(g) = 5.35*log(N2OConc(g)/pN20);
-    RFtot(g) = RFCO2(g) + RFCH4(g) + RFN2H(g) + s*totRadForcAerosols(g) + totRadForcExclCO2AndAerosols(g);
+    RFtot(g) = RFCO2(g)+ s*totRadForcAerosols(g) + totRadForcExclCO2AndAerosols(g);
 end
+
+s = 1.2;
+rfTot2 = 5.35*log(B(1,:)/B(1,1));
+rfTot2 = rfTot2(1:(length(rfTot2)-1)) + s*totRadForcAerosols + totRadForcExclCO2AndAerosols;
 
 %{
 t = linspace(t0,T,736);
@@ -84,7 +87,7 @@ ylabel('change in absorbed effect from sun [W/m^2]')
 %%%%%%%%%%%%%%%%%%%%%% beräkna temperaturförändring %%%%%%%%%%%%%%%%%%%%%%%
 
 lambda = 0.8;
-kappa = 0.5;
+kappa = 0.6;
 yr = 1/(3600*24*365);
 C1 = c*h*rho*yr;
 C2 = c*d*rho*yr;
@@ -97,19 +100,31 @@ adjustment = 0.1*ones(1,N);
 
 dT1 = zeros(1,N);
 dT2 = zeros(1,N);
+T1 = zeros(1,N);
+T2 = zeros(1,N);
 
 for i=1:N-1
     % C1 * dT1dt = RF - dT2 / lambda - kappa*(dT1 - dT2)
     % C2 * dT2dt = kappa*(dT1 - dT2)
-    dT1(i+1) = dT1(i) + (RFtot(i) - dT1(i)/lambda - kappa*(dT1(i) - dT2(i)))/C1;
-    dT2(i+1) = dT2(i) + (kappa*(dT1(i) - dT2(i)))/C2;
+    deltaT1 = T1(i) -T1(1);
+    deltaT2 = T2(i) - T2(1);
+    
+    dT1(i+1) = (RFtot(i+114) - deltaT1/lambda - kappa*(deltaT1-deltaT2))/C1;
+    dT2(i+1) = (kappa*(deltaT1-deltaT2))/C2;
+    T1(i+1) =T1(i) + dT1(i);
+    T2(i+1) = T2(i) + dT2(i);
 end
+
+mean = sum(T1(71:100))/30
+
+T1 = T1-mean;
 
 
 hold on
-plot(t, dT1-adjustment, 'c');
+plot(t, T1, 'c');
+plot(t, T2, 'red');
 plot(t, TAnomali, 'black');
-legend('ythav', 'NASA');
-
+legend('ythav','djup', 'NASA');
+title('s=1.2, lambda = 0.8, kappa = 0.6');
 
 
