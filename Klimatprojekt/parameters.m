@@ -5,12 +5,20 @@ NASA_GISS
 
 
 % DEL 1:
+% startår för data
+t0 = 1765;
+% slutår för data(uppskattningar)
+T = 2500;
 % Startvärdena för kolstockarna: [atmosfär, biomassa, bundet i marken]
 B0 = [600, 600, 1500];
 % mått på hur effektivt fotosyntesen omvandlar C02 till biomassa
 beta = 0.3; % 0.1 - 0.8
 % nettoprimärproduktion innan industriella revolutionen
 NPP0 = 60;
+% hur snabbt havet mättas på CO2
+k = 3.06*10^(-3);
+% omvandligsfaktor från CO2 till kol i atmosfären [(ppm CO2)/Gton C]
+CO2toPPM = 0.469;
 
 
 % DEL 2: 
@@ -26,3 +34,5 @@ rho = 1020;
 h = 50;
 % Djuphavsboxens effektiva djup [m]
 d = 2000;
+% mått på hur mycket aerosoler påverkar radiative forcing
+s = 1; 

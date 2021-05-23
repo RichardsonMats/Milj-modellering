@@ -7,11 +7,7 @@
 clc
 clf
 clear
-% andra filer
-utslappRCP45
-NASA_GISS
-koncentrationerRCP45
-radiativeForcingRCP45
+parameters
 
 p0 = CO2ConcRCP45(1);
 
@@ -36,14 +32,13 @@ title('radiative forcing from CO2 emissions')
 
 clc 
 clf
-radiativeForcingRCP45
+parameters
 
 RFCO2 = zeros(1, length(CO2ConcRCP45));
 RFCH4 = zeros(1, length(CH4Conc));
 RFN2H = zeros(1, length(N2OConc));
 summa = zeros(1, length(CH4Conc));
 
-s = 1;
 
 pCO0=CO2ConcRCP45(1);
 pCH40=CH4Conc(1);
@@ -56,8 +51,7 @@ for g = 1:length(CO2ConcRCP45)
     summa(g) = RFCO2(g)+ RFCH4(g) + RFN2H(g);
 end
 
-t0 = 1765;
-T = 2500;
+
 t = linspace(t0,T,736);
 plot (t, summa, 'blue');
 hold on
@@ -84,27 +78,14 @@ Verifiera numeriskt genom att göra modellens tidshorisont tillräcklig lång
 ekvation 10& 11). 
 %} 
 
-% Parametervärden:
-% lambda = klimatkänslighetsparametern = 0.8 [K?W-1?m2], spann 0.5-1.3 [K?W-1?m2].
-% kappa = utbyteskoefficienten = 0.5 [W?K-1?m-2], spann 0.2-1 [W?K-1?m-2]. 
-% RF = radiative forcing [W/m2].
-% c = Vattnets specifika värmekapacitet = 4186 (J/kg)/K.
-% rho = Vattnets densitet =1020 kg/m3
-% h = Ytboxens effektiva djup = 50 m.
-% C1= c?h??= Ytboxens effektiva värmekapacitet. Ni får räkna om så att parametern har enheten[W?yr?K-1?m-2].
-% d= Djuphavsboxens effektiva djup = 2000 m.
-% C2= c?d??= Djuphavsboxens effektiva värmekapacitet. Ni får räkna om så att parametern har enheten[W?yr?K-1?m-2].
-
 clc 
 clf
+parameters
+
 
 lambda = 0.8;
 kappa = 0.5;
 RF = 1;
-c = 4186;
-rho = 1020;
-h = 50;
-d = 2000;
 yr = 1/(3600*24*365);
 C1 = c*h*rho*yr;
 C2 = c*d*rho*yr;
@@ -113,10 +94,9 @@ C2 = c*d*rho*yr;
 % C2 * dT2dt = kappa*(dT1 - dT2)
 
 
-t0 = 1765;
-T = 1965;
-N = T-t0;
-t = linspace(t0,T,N);
+t1 = 1965;
+N = t1-t0;
+t = linspace(t0,t1,N);
 
 dT1 = zeros(1,N);
 dT2 = zeros(1,N);
@@ -147,10 +127,9 @@ legend('ythav', 'djuphav');
 clc
 clf
 
-t0 = 1765;
-T = 5000;
-N = T-t0;
-t = linspace(t0,T,N);
+t1 = 5000;
+N = t1-t0;
+t = linspace(t0,t1,N);
 dT1 = zeros(1,N);
 dT2 = zeros(1,N);
 
@@ -200,15 +179,16 @@ försök förstå resultaten intuitivt.
 %}
 clc
 clf
+parameters
 
 % params = [kappa, lambda]
 params = [[0.2, 0.8]; [1.0, 0.8]; [0.5, 0.5]; [0.5, 1.3]]
 RF = 1;
 
-t0 = 1765;
-T = 1765+200;
-N = T-t0;
-t = linspace(t0,T,N);
+
+t1 = 1765+200;
+N = t1-t0;
+t = linspace(t0,t1,N);
 dT1 = zeros(4,N);
 dT2 = zeros(4,N);
 

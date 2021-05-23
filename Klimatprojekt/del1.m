@@ -7,24 +7,13 @@ volymsandelar. Omvandlingsfaktorn ges av 0.469 ppm CO2/Gton C. Jämför er beräkna
 koldioxidkoncentration med koncentrationen given i koncentrationerRCP45.m. Varför tror ni era
 berknande koncentrationer skiljer sig från den som anges i filen koncentrationerRCP45.m?
 %}
-utslappRCP45
-koncentrationerRCP45
+parameters
 
 
-global NPP0; % nettoprimärproduktion förindustriell
-global beta; % koldioxidfertiliseringen
-global B0; % boxarnas begynnelsevärden
-global U; % utsläpp
-NPP0 = 60; 
-beta = 0.35; 
-B0 = [600, 600, 1500];
 U = CO2Emissions;
 
-CO2toPPM = 0.469; % (ppm CO2)/Gton C
-t0 = 1765;
-T = 2500; 
-N = length(U);
-t = linspace(t0 ,T , N ); % A vector to store the time values .
+
+t = linspace(t0, T, T-t0+1); % A vector to store the time values .
 
 [B, t] = forwardEuler (@dBdT, t);
 
@@ -133,9 +122,9 @@ figur 3 med hjälp av parametervärdena i tabell 1 och ekvation 7.
 clc
 clf
 clear
+parameters
 A = [0.113, 0.213, 0.258, 0.273, 0.1430];
 tau0 = [2.0, 12.2, 50.4, 243.3, Inf];
-k = 3.06*10^(-3);
 kumUtsl = [0, 140, 560, 1680];
 tau = @(i,u) tau0(i).*(1+k*kumUtsl(u));
 
@@ -167,14 +156,10 @@ koncentrationen med koncentrationerna i koncentrationerRCP45.m.
 clc
 clf
 clear
-utslappRCP45
-koncentrationerRCP45
+parameters
 
-CO2toPPM = 0.469; % (ppm CO2)/Gton C
 A = [0.113 0.213 0.258 0.273 0.1430];
 tau0 = [2.0, 12.2, 50.4, 243.3, Inf];
-k = 3.06*10^(-3);
-%Utsl = CO2Emissions;
 C = CO2ConcRCP45;
 
 tau = @(i,u) tau0(i).*(1+k*CO2Emissions(u));
@@ -185,14 +170,13 @@ M(1) = 600;
 for t = 2:1:length(CO2Emissions)
     I = 0;
     taui = taufunc(tau0, CO2Emissions, t, k);
-
     for i = 1:t
         I = I + ifunc(t, i, A, taui)*CO2Emissions(i);
     end
     M(t)=M0 + I;
 end
 
-t = linspace(1765, 2500, length(CO2Emissions));
+t = linspace(t0, T, length(CO2Emissions));
 plot(t, CO2toPPM*M)
 
 hold on
@@ -223,24 +207,18 @@ modellresultatet med tidsserien för de harmoniserade värdena givna i koncentrati
 Anpassa ? så att den modellberäknade koncentrationen stämmer hyffsat väl överens med den 
 observerade.
 %}
-
 clear
 clc
 clf
-utslappRCP45
-koncentrationerRCP45
-CO2toPPM = 0.469; % (ppm CO2)/Gton C
+parameters
 
 alpha = zeros(3,3);
 alpha(3,1)=45/1500;
 alpha(2,3)=45/600;
 alpha(2,1)=15/600;
 
-B0=[600 600 1500];
 
-beta = 0.3;
-NPP0=60;
-NPP=NPP0;
+NPP = NPP0;
 B(1,1) = B0(1);
 B(2,1) = B0(2);
 B(3,1) = B0(3);
@@ -260,8 +238,6 @@ for k = 1:length(CO2Emissions)
     NPP(k+1) = NPP0 * (1+ beta * log(B(1, k+1)/B0(1)));
 end
 
-t0 = 1765;
-T = 2500;
 N = length(CO2Emissions);
 t = linspace(t0,T,N);
 
