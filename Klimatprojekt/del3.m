@@ -61,6 +61,8 @@ RFtot = zeros(1, length(CH4Conc));
 pCO0 = B0(1)/CO2toPPM;
 pCH40 = CH4Conc(1);
 pN20 = N2OConc(1);
+s = 1.2;
+
 
 for g = 1:length(CO2ConcRCP45)
     % fråga om 5.35 ska användas för formeln även till andra gaser än CO2?
@@ -69,7 +71,6 @@ for g = 1:length(CO2ConcRCP45)
     RFtot(g) = RFCO2(g)+ s*totRadForcAerosols(g) + totRadForcExclCO2AndAerosols(g);
 end
 
-s = 1.2;
 rfTot2 = 5.35*log(B(1,:)/B(1,1));
 rfTot2 = rfTot2(1:(length(rfTot2)-1)) + s*totRadForcAerosols + totRadForcExclCO2AndAerosols;
 
@@ -96,7 +97,6 @@ t_start = 1879;
 t_stop = 2019;
 N = t_stop - t_start;
 t = linspace(t_start, t_stop, N);
-adjustment = 0.1*ones(1,N);
 
 dT1 = zeros(1,N);
 dT2 = zeros(1,N);
