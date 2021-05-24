@@ -69,6 +69,34 @@ s:
 %}
 
 
+%% 12 
+clear
+clf
+clc
+parameters
+CO2UpTo2019 = CO2Emissions(1:255);
+linearDecline = CO2UpTo2019(end)/51;
+CO2Decline = CO2UpTo2019;
+for n = 1:51
+    CO2Decline(255+n) = (CO2Decline(254+n) - linearDecline);
+end
+CO2Decline(1, 307:436) = 0;
 
 
+CO2Constant = CO2UpTo2019;
+CO2Constant(1,255:436) = CO2UpTo2019(end);
+
+CO2Increase = CO2UpTo2019;
+linearIncrease = 0.5*CO2UpTo2019(end)/81;
+for n = 1:81
+    CO2Increase(255+n) = (CO2Increase(254+n) + linearIncrease);
+end
+    
+CO2Increase(1,337:436) = 1.5*CO2UpTo2019(end);
+
+plot(CO2Decline)
+hold on 
+plot(CO2Constant)
+hold on 
+plot(CO2Increase)
 

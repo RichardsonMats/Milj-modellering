@@ -27,9 +27,15 @@ parameters
 
 subplot(1,2,1)
 beta = 0.3;
+<<<<<<< HEAD
 lambda = 1.3;  % 0.5 - 1.3
 kappa  = 0.9;  % 0.2 - 1.0
 s      = 1.5;  % ??? - ???
+=======
+lambda = 0.5;  % 0.5 - 1.3
+kappa  = 0.8;  % 0.2 - 1.0
+s      = 0.5;  % ??? - ???
+>>>>>>> 4f4cdb31c9f18c0e62ad7c013436eaa142b6cf97
 start = 1879;
 stop = 2019;
 [t,data] = del3(beta, lambda, kappa, s, start, stop);
@@ -42,9 +48,15 @@ legend('Location','southeast')
 
 subplot(1,2,2)
 beta = 0.3;
+<<<<<<< HEAD
 lambda = 1.3;  % 0.5 - 1.3
 kappa  = 0.8;  % 0.2 - 1.0
 s      = 1.4;  % ??? - ???
+=======
+lambda = 0.5;  % 0.5 - 1.3
+kappa  = 0.5;  % 0.2 - 1.0
+s      = 1.0;  % ??? - ???
+>>>>>>> 4f4cdb31c9f18c0e62ad7c013436eaa142b6cf97
 start = 1879;
 stop = 2019;
 [t,data] = del3(beta, lambda, kappa, s, start, stop);
@@ -67,9 +79,36 @@ kappa: mått på hur snabbt djuphaven värms upp av ythaven. detta borde
 teoretiskt gå om man ha
 %}
 
+<<<<<<< HEAD
 
 
 
+=======
+%% 12 
+clear
+clf
+clc
+parameters
+CO2UpTo2019 = CO2Emissions(1:255);
+linearDecline = CO2UpTo2019(end)/51;
+CO2Decline = CO2UpTo2019;
+for n = 1:51
+    CO2Decline(255+n) = (CO2Decline(254+n) - linearDecline);
+end
+CO2Decline(1, 307:436) = 0;
+
+
+CO2Constant = CO2UpTo2019;
+CO2Constant(1,255:436) = CO2UpTo2019(end);
+
+CO2Increase = CO2UpTo2019;
+linearIncrease = 0.5*CO2UpTo2019/81;
+for n = 1:81
+    CO2Increase(255+n) = (CO2Increase(254+n) + linearIncrease);
+end
+    
+%CO2Increase = (1,255:436)
+>>>>>>> 4f4cdb31c9f18c0e62ad7c013436eaa142b6cf97
 
 
 
