@@ -27,9 +27,9 @@ parameters
 
 subplot(1,2,1)
 beta = 0.3;
-lambda = 0.5;  % 0.5 - 1.3
-kappa  = 0.8;  % 0.2 - 1.0
-s      = 0.5;  % ??? - ???
+lambda = 1.3;  % 0.5 - 1.3
+kappa  = 0.9;  % 0.2 - 1.0
+s      = 1.5;  % ??? - ???
 start = 1879;
 stop = 2019;
 [t,data] = del3(beta, lambda, kappa, s, start, stop);
@@ -42,9 +42,9 @@ legend('Location','southeast')
 
 subplot(1,2,2)
 beta = 0.3;
-lambda = 0.5;  % 0.5 - 1.3
-kappa  = 0.5;  % 0.2 - 1.0
-s      = 1.0;  % ??? - ???
+lambda = 1.3;  % 0.5 - 1.3
+kappa  = 0.8;  % 0.2 - 1.0
+s      = 1.4;  % ??? - ???
 start = 1879;
 stop = 2019;
 [t,data] = del3(beta, lambda, kappa, s, start, stop);
@@ -57,7 +57,18 @@ legend('Location','southeast')
 
 %% 11 c)
 %{
-c)?,?, och s är alla osäkra. Spekulera i möjligheten att försöka statistiskt 
+c)?, ?, och s är alla osäkra. Spekulera i möjligheten att försöka statistiskt 
 skatta dessa värden från tidserier på den globala medeltemperaturen och 
 därigenom minska osäkerhetsintervallen.
+
+lambda: beror bla på radiative forcing som beror på CO2-utsläpp. Detta finns
+det data på, alltså går parametern att skatta statistiskt.
+kappa: mått på hur snabbt djuphaven värms upp av ythaven. detta borde
+teoretiskt gå om man har datan?
+s: 
 %}
+
+
+
+
+
