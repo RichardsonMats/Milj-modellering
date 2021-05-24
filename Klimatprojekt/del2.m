@@ -102,15 +102,25 @@ t = linspace(t0,t1,N);
 
 dT1 = zeros(1,N);
 dT2 = zeros(1,N);
+T1 = zeros(1,N);
+T2 = zeros(1,N);
 
 for i=1:N-1
-    dT1(i+1) = (RF - dT1(i)/lambda - kappa*(dT1(i) - dT2(i)))/C1;
-    dT2(i+1) =  (kappa*(dT1(i) - dT2(i)))/C2;
+    % C1 * dT1dt = RF - dT2 / lambda - kappa*(dT1 - dT2)
+    % C2 * dT2dt = kappa*(dT1 - dT2)
+    deltaT1 = T1(i) -T1(1);
+    deltaT2 = T2(i) - T2(1);
+    
+    dT1(i+1) = (RF - deltaT1/lambda - kappa*(deltaT1-deltaT2))/C1;
+    dT2(i+1) = (kappa*(deltaT1-deltaT2))/C2;
+    T1(i+1) = T1(i) + dT1(i);
+    T2(i+1) = T2(i) + dT2(i);
 end
 
+
 hold on
-plot(t, dT1, 'c');
-plot(t, dT2, 'b');
+plot(t, T1, 'c');
+plot(t, T2, 'b');
 legend('ythav', 'djuphav');
 
 %% b) Analysera vilken effekt klimatkänslighetsparameter ? och ? har på tiden det tar att uppnå 

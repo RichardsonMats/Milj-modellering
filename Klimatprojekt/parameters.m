@@ -35,4 +35,4 @@ h = 50;
 % Djuphavsboxens effektiva djup [m]
 d = 2000;
 % mått på hur mycket aerosoler påverkar radiative forcing
-s = 1; 
+s = 1; % ?? - ??

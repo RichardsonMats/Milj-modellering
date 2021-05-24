@@ -1,0 +1,48 @@
+%% 11 a)
+%{
+Hur mycket påverkar valet av referensperiod resultaten? Vad vore en lämplig 
+referensperiod givet att syftet är att beskriva temperaturförändringen 
+jämfört med förindustriell tid? 
+
+Valet av referensperiod påverkar resultatets förskjutning i y-led. Det 
+bästa hade varit att ta ett genomsnitt av temperaturen innan
+industrialiseringen, men eftersom vi inte har den datan vore det bästa att 
+ta ett genomsnitt så tidigt som möjligt när vi har data.  
+%}
+
+%% 11 b)
+%{
+b) Testa med olika värden på klimatkänslighetsparametern ?(0.5, 0.8 och 1.3 KW-1m2), 
+vad händer? Skruva på parametern för värmeutbytet mellan ytboxen och 
+djuphavet ? och skalfaktorn s(för aerosol forcing) för att hitta ett 
+modellsvar som stämmer väl överens med den observerade temperaturanomalin 
+enligt NASA. Hitta lämpliga värden på ? och s för de tre olika fallen på 
+klimatkänslighetsparametern. Vilka värden på ?och stycker ni ger en bra 
+anpassning till NASAs temperaturserie för de olika antagandena på 
+klimatkänslighetsparametern?
+%}
+clc
+clf
+parameters
+
+
+beta = 0.3;
+lambda = 0.5;  % 0.5 - 1.3
+kappa  = 1.0;  % 0.2 - 1.0
+s      = 1.2;  % ??? - ???
+start = 1879;
+stop = 2019;
+[t,data] = del3(beta, lambda, kappa, s, start, stop);
+hold on
+plot(t, data, 'b');
+plot(t, TAnomali, 'black');
+title("lambda = " + lambda + ", kappa = " + kappa + ", s = " + s);
+legend('modell', 'NASA');
+legend('Location','southeast')
+
+%% 11 c)
+%{
+c)?,?, och s är alla osäkra. Spekulera i möjligheten att försöka statistiskt 
+skatta dessa värden från tidserier på den globala medeltemperaturen och 
+därigenom minska osäkerhetsintervallen.
+%}
