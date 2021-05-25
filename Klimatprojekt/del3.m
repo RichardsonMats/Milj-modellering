@@ -62,22 +62,12 @@ pCO0 = B0(1)/CO2toPPM;
 
 
 for g = 1:length(CO2ConcRCP45)
-    % fråga om 5.35 ska användas för formeln även till andra gaser än CO2?
     CO2_change = (B(1,g))/CO2toPPM;
     RFCO2(g) = 5.35*log(CO2_change/pCO0);
     RFtot(g) = RFCO2(g) + s*totRadForcAerosols(g) + totRadForcExclCO2AndAerosols(g);
 end
 
-%{
-t = linspace(t0,T,736);
-hold on
-plot (t, RFCO2, 'yellow');
-plot(t, CO2RadForc, 'm');
-plot (t, RFtot, 'blue');
-legend('vår RFCO2', 'RCP RFCO2', 'Sum');
-xlabel('year')
-ylabel('change in absorbed effect from sun [W/m^2]')
-%}
+
 
 %%%%%%%%%%%%%%%%%%%%%% beräkna temperaturförändring %%%%%%%%%%%%%%%%%%%%%%%
 
@@ -94,8 +84,6 @@ T1 = zeros(1,N);
 T2 = zeros(1,N);
 
 for i=1:N-1
-    % C1 * dT1dt = RF - dT2 / lambda - kappa*(dT1 - dT2)
-    % C2 * dT2dt = kappa*(dT1 - dT2)
     deltaT1 = T1(i) -T1(1);
     deltaT2 = T2(i) - T2(1);
     

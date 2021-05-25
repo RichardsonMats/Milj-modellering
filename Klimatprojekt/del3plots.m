@@ -130,7 +130,6 @@ yr = 1/(3600*24*365);
 C1 = c*h*rho*yr;
 C2 = c*d*rho*yr;
 
-% OBS EJ Medelvärde
 
 for y = 1:3
     Utslapp = CO2Versions(y,:);
@@ -160,8 +159,6 @@ for y = 1:3
     
     
     for i=1:N-1
-        % C1 * dT1dt = RF - dT2 / lambda - kappa*(dT1 - dT2)
-        % C2 * dT2dt = kappa*(dT1 - dT2)
         deltaT1 = T1(i) -T1(1);
         deltaT2 = T2(i) - T2(1);
     
