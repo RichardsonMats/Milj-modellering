@@ -105,9 +105,10 @@ for i=1:N-1
     T2(i+1) = T2(i) + dT2(i);
 end
 
-mean = sum(T1(71:100))/30
+mean = sum(T1(71:100))/30;
 T1 = T1-mean;
 
 data = T1;
 end
+
 
