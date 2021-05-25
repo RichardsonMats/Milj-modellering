@@ -67,25 +67,107 @@ clear
 clf
 clc
 parameters
+N = length(CO2Emissions);
 CO2UpTo2019 = CO2Emissions(1:255);
 linearDecline = CO2UpTo2019(end)/51;
 CO2Decline = CO2UpTo2019;
 for n = 1:51
     CO2Decline(255+n) = (CO2Decline(254+n) - linearDecline);
 end
-CO2Decline(1, 307:436) = 0;
+CO2Decline(1, 307:736) = 0;
+
 
 
 CO2Constant = CO2UpTo2019;
-CO2Constant(1,255:436) = CO2UpTo2019(end);
+CO2Constant(1,255:736) = CO2UpTo2019(end);
 
 CO2Increase = CO2UpTo2019;
-linearIncrease = 0.5*CO2UpTo2019/81;
+linearIncrease = 0.5*CO2UpTo2019(end)/81;
 for n = 1:81
     CO2Increase(255+n) = (CO2Increase(254+n) + linearIncrease);
 end
     
-%CO2Increase = (1,255:436)
+CO2Increase(1,337:436) = 1.5*CO2UpTo2019(end);
+CO2Increase(1,337:736) = 1.5*CO2UpTo2019(end);
 
 
+CO2Versions(1,:) = CO2Decline;
+CO2Versions(2,:) = CO2Constant;
+CO2Versions(3,:) = CO2Increase;
 
+alpha = zeros(3,3);
+alpha(3,1)=45/1500;
+alpha(2,3)=45/600;
+alpha(2,1)=15/600;
+
+B(1,1) = B0(1);
+B(2,1) = B0(2);
+B(3,1) = B0(3);
+dBdt1 = zeros(1,length(CO2Emissions));
+dBdt2 = zeros(1,length(CO2Emissions));
+dBdt3 = zeros(1,length(CO2Emissions));
+dT1 = zeros(1,N);
+dT2 = zeros(1,N);
+T1 = zeros(1,N);
+T2 = zeros(1,N);
+kParam = k;
+NPP = zeros(1,length(CO2Emissions));
+NPP(1) = NPP0;
+yr = 1/(3600*24*365);
+C1 = c*h*rho*yr;
+C2 = c*d*rho*yr;
+
+% OBS EJ Medelvärde
+
+for y = 1:3
+    Utslapp = CO2Versions(y,:);
+    for k = 1:length(CO2Emissions)
+        dBdt1(k+1) = (alpha(3,1)*B(3,k) + alpha(2,1)*B(2,k)- NPP(k)+CO2Versions(y,k));
+        B(1, k+1) = mFunc(k+1, dBdt1, kParam);
+        dBdt2(k+1) = NPP(k) - alpha(2,3)*B(2,k) - alpha(2,1)*B(2,k);
+        dBdt3(k+1) =  alpha(2,3)*B(2,k)-alpha(3,1)*B(3,k);
+        B(2, k+1)=B(2,k) + dBdt2(k);
+        B(3, k+1)= B(3,k) + dBdt3(k);
+    
+        NPP(k+1) = NPP0 * (1+ beta * log(B(1, k+1)/B0(1)));
+    end
+    
+    RFCO2 = zeros(1, length(CO2ConcRCP45));
+    RFtot = zeros(1, length(CH4Conc));
+    pCO0 = B0(1)/CO2toPPM;
+
+
+    for g = 1:length(CO2ConcRCP45)
+       
+        CO2_change = (B(1,g))/CO2toPPM;
+        RFCO2(g) = 5.35*log(CO2_change/pCO0);
+        RFtot(g) = RFCO2(g) + s*totRadForcAerosols(g) + totRadForcExclCO2AndAerosols(g);
+    end
+
+    
+    
+    for i=1:N-1
+        % C1 * dT1dt = RF - dT2 / lambda - kappa*(dT1 - dT2)
+        % C2 * dT2dt = kappa*(dT1 - dT2)
+        deltaT1 = T1(i) -T1(1);
+        deltaT2 = T2(i) - T2(1);
+    
+        dT1(i+1) = (RFtot(i) - deltaT1/lambda - kappa*(deltaT1-deltaT2))/C1;
+        dT2(i+1) = (kappa*(deltaT1-deltaT2))/C2;
+        T1(i+1) = T1(i) + dT1(i);
+        T2(i+1) = T2(i) + dT2(i);
+    end
+    
+    yPlots(y,:) = T1(:);
+    
+end
+%[t, data] = del3(0.3, 0.8, 1, 1, 1879, 2019);
+p = plot(1765:2019
+
+plot(1880:2019, data,'black')
+hold on
+plot(2019:2102,yPlots(1, 254:337),'--g')
+hold on
+plot(2019:2102,yPlots(2, 254:337),'--y')
+hold on
+plot(2019:2102,yPlots(3, 254:337),'--r')
